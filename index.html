@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catequesis App</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --secondary: #f4f7f6;
+            --accent: #ffb703;
+            --text: #333;
+            --white: #fff;
+            --success: #2a9d8f;
+            --danger: #e63946;
+            --border: #ddd;
+            --gray: #6c757d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        html, body { 
+            background-color: var(--secondary); 
+            color: var(--text); 
+            height: 100vh; height: 100dvh; 
+            overflow: hidden; 
+            display: flex; flex-direction: column;
+        }
+        
+        header { 
+            background-color: var(--primary); color: var(--white); padding: 15px; 
+            flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .header-title h1 { font-size: 20px; margin-bottom: 2px; }
+
+        /* Botón Agregar más pequeño */
+        .add-btn {
+            background-color: var(--white); color: var(--primary); border: none;
+            width: 32px; height: 32px; border-radius: 50%; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: 0.2s;
+        }
+        .add-btn:active { transform: scale(0.95); }
+
+        main#app { 
+            flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; 
+        }
+
+        .card { background: var(--white); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; margin-bottom: 15px; }
+        .card-header h2 { font-size: 18px; color: var(--primary); margin: 0; }
+        .card > h2 { font-size: 18px; margin-bottom: 15px; color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 5px; } 
+
+        .icon-btn { background: var(--secondary); color: var(--text); border: none; font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
+        
+        .month-nav { display: flex; align-items: center; justify-content: space-between; background: var(--white); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .btn-icon-month { background: var(--secondary); color: var(--primary); width: 36px; height: 36px; border-radius: 50%; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .month-nav span { font-weight: bold; font-size: 16px; color: var(--primary); text-transform: capitalize; }
+        
+        .sundays-row { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .sunday-btn { flex: 1; min-width: 55px; background: var(--white); border: 1px solid var(--border); color: var(--gray); padding: 8px 5px; border-radius: 10px; font-size: 12px; text-align: center; cursor: pointer; }
+        .sunday-btn strong { font-size: 18px; display: block; margin-top: 2px; color: var(--text); }
+        .sunday-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
+        .sunday-btn.active strong { color: var(--white); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+        .checkbox-group { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
+
+        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button.btn-outline { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
+        
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .list-item:last-child { border-bottom: none; }
+        .kid-info { flex-grow: 1; padding-right: 10px; }
+        .kid-info h3 { font-size: 16px; margin-bottom: 4px; color: var(--text); }
+        .kid-info p { font-size: 12px; color: #666; }
+        
+        .clickable-row { cursor: pointer; transition: background 0.2s; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; }
+        .badge-present { background-color: var(--success); }
+        .badge-absent { background-color: var(--danger); }
+
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--danger); transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .stat-card { background: var(--secondary); padding: 15px; text-align: center; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;}
+        .stat-card h4 { font-size: 14px; margin-bottom: 5px; }
+        .stat-card .number { font-size: 24px; font-weight: bold; color: var(--primary); }
+        
+        .profile-data { margin-bottom: 10px; font-size: 14px; }
+        .profile-data strong { color: var(--primary); display: inline-block; width: 120px; }
+
+        /* Pantalla de Carga y Errores */
+        #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .error-msg { text-align: center; padding: 40px 20px; color: var(--danger); font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1 id="app-title">Pastoral App</h1>
+            <p style="font-size: 12px; opacity: 0.8;" id="app-subtitle">Gestión de Catequesis</p>
+        </div>
+        <div id="header-action"></div>
+    </header>
+    
+    <div id="loader"><div class="spinner"></div><p>Sincronizando...</p></div>
+
+    <main id="app"></main>
+
+    <script>
+        // === 1. CONFIGURACIÓN DE URL DE GOOGLE APPS SCRIPT ===
+        // ¡IMPORTANTE! Pega aquí la URL de tu Web App de Google Sheets cuando la tengas
+        const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbyiK8e1U92qziU7HC_ZMiynGLttwrvtYu8gy0G5EikulyHr9impXkEXuva8uW1JNF2p/exec'; 
+        
+        // === 2. DETECCIÓN DE ROL POR WHATSAPP (URL PARAMS) ===
+        const urlParams = new URLSearchParams(window.location.search);
+        let currentRole = null;
+        
+        // Si el enlace es: misitio.com/?rol=coordinador
+        if (urlParams.get('rol') === 'coordinador') {
+            currentRole = 'coordinador';
+        } 
+        // Si el enlace es: misitio.com/?grupo=Grupo 1
+        else if (urlParams.get('grupo')) {
+            currentRole = urlParams.get('grupo');
+            document.getElementById('app-subtitle').innerText = "Catequista: " + currentRole;
+        }
+
+        // --- CÁLCULO DE EDAD ---
+        function calcularEdadExacta(fechaNacStr) {
+            if (!fechaNacStr) return 0;
+            let p = fechaNacStr.split('-');
+            let nac = new Date(p[0], p[1] - 1, p[2]);
+            let hoy = new Date();
+            let edad = hoy.getFullYear() - nac.getFullYear();
+            if (hoy.getMonth() < nac.getMonth() || (hoy.getMonth() === nac.getMonth() && hoy.getDate() < nac.getDate())) edad--;
+            return edad;
+        }
+
+        const monthNames =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        function formatDateStr(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+        function getUltimoDomingo() {
+            let d = new Date(); d.setDate(d.getDate() - d.getDay()); return d;
+        }
+
+        let lastSun = getUltimoDomingo();
+        let displayYear = lastSun.getFullYear();
+        let displayMonth = lastSun.getMonth();
+        let fechaSeleccionada = formatDateStr(lastSun);
+
+        let activeTab = 'resumen'; 
+        let viewingGroup = null;    
+        let viewingChildId = null;  
+        let isEditingChild = false; 
+
+        // Base de datos local (Se llenará con Google Sheets)
+        let childrenDB =[];
+        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+        
+        // === LÓGICA DE API CON GOOGLE SHEETS ===
+        function showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
+
+        async function initData() {
+            if(!currentRole) {
+                document.getElementById('app').innerHTML = `<div class="error-msg">⚠️ <b>Acceso Denegado.</b><br><br>Por favor, abre la aplicación utilizando el enlace personalizado que te envió el coordinador por WhatsApp.</div>`;
+                return;
+            }
+
+            // Si aún no has puesto la URL de Google Sheets, usamos datos de prueba
+            if(!GOOGLE_SHEETS_API_URL) {
+                console.log("Modo de prueba local activo.");
+                childrenDB =[
+                    { id: 1, nombre: 'Juan', apellido: 'Pérez', fechaNac: '2014-05-12', representante: 'Ana Pérez', telefono: '0414-1234567', sector: 'Centro', bautizado: true, comunion: false, grupo: 'Grupo 1', asistencia: {} }
+                ];
+                render();
+                return;
+            }
+
+            try {
+                showLoader(true);
+                const response = await fetch(GOOGLE_SHEETS_API_URL + "?action=get");
+                const data = await response.json();
+                childrenDB = data;
+                render();
+            } catch (error) {
+                alert("Error al conectar con la base de datos.");
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function saveToGoogleSheets(childData) {
+            if(!GOOGLE_SHEETS_API_URL) return true; // Si es local, fingir éxito
+            try {
+                showLoader(true);
+                await fetch(GOOGLE_SHEETS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(childData),
+                    headers: { 'Content-Type': 'text/plain' } // Evita errores CORS
+                });
+                return true;
+            } catch (e) {
+                alert("Error al guardar en la nube.");
+                return false;
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // --- RENDERIZADO PRINCIPAL ---
+        function render() {
+            const app = document.getElementById('app');
+            const headerAction = document.getElementById('header-action');
+            app.innerHTML = '';
+
+            if (currentRole === 'coordinador' && activeTab === 'resumen' && viewingGroup === null && viewingChildId === null) {
+                headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()">➕</button>`;
+            } else {
+                headerAction.innerHTML = '';
+            }
+
+            if (currentRole === 'coordinador') {
+                app.innerHTML = renderCoordinador();
+            } else {
+                app.innerHTML = renderCatequista(currentRole);
+            }
+        }
+
+        function renderSundaySelector() {
+            let sundays =[];
+            let d = new Date(displayYear, displayMonth, 1);
+            while (d.getDay() !== 0) d.setDate(d.getDate() + 1); 
+            while (d.getMonth() === displayMonth) { sundays.push(new Date(d)); d.setDate(d.getDate() + 7); }
+
+            let sundaysHtml = sundays.map(sun => {
+                let dateStr = formatDateStr(sun);
+                let isActive = dateStr === fechaSeleccionada ? 'active' : '';
+                return `<div class="sunday-btn ${isActive}" onclick="seleccionarDomingo('${dateStr}')">Dom <strong>${sun.getDate()}</strong></div>`;
+            }).join('');
+
+            return `
+                <div class="month-nav">
+                    <button class="btn-icon-month" onclick="cambiarMes(-1)">◀</button>
+                    <span>${monthNames[displayMonth]} ${displayYear}</span>
+                    <button class="btn-icon-month" onclick="cambiarMes(1)">▶</button>
+                </div>
+                <div class="sundays-row">${sundaysHtml}</div>`;
+        }
+
+        function renderCoordinador() {
+            if (activeTab === 'inscripcion') return renderFormularioInscripcion();
+            if (viewingChildId !== null) return isEditingChild ? renderEditarNino(viewingChildId) : renderVerNino(viewingChildId);
+            if (viewingGroup !== null) return renderListaGrupoCoordinador(viewingGroup);
+            return renderTarjetasResumen();
+        }
+
+        function renderTarjetasResumen() {
+            let cards = gruposList.map(g => {
+                const ninosGrupo = childrenDB.filter(c => c.grupo === g);
+                const presentes = ninosGrupo.filter(c => c.asistencia[fechaSeleccionada]).length;
+                const total = ninosGrupo.length;
+                const porcentaje = total === 0 ? 0 : Math.round((presentes/total)*100);
+                let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
+                
+                return `
+                <div class="stat-card" onclick="verGrupo('${g}')">
+                    <h4>${g}</h4><div class="number">${presentes} / ${total}</div>
+                    <div style="color: ${colorClass}; font-weight:bold; font-size:12px;">${porcentaje}% Asistencia</div>
+                </div>`;
+            }).join('');
+
+            return `${renderSundaySelector()}<div class="card"><h2>Asistencia General</h2><div class="stats-grid">${cards}</div></div>`;
+        }
+
+        function renderListaGrupoCoordinador(grupo) {
+            const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
+            let listaHTML = ninosGrupo.length === 0 ? '<p style="text-align:center;">No hay niños.</p>' : ninosGrupo.map(n => {
+                let badge = n.asistencia[fechaSeleccionada] ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
+                return `<div class="list-item clickable-row" onclick="verNino('${n.id}')">
+                            <div class="kid-info"><h3>${n.nombre} ${n.apellido}</h3></div><div>${badge}</div>
+                        </div>`;
+            }).join('');
+
+            return `${renderSundaySelector()}<div class="card"><div class="card-header"><button class="icon-btn" onclick="volverResumen()">⬅️</button><h2>${grupo}</h2></div>${listaHTML}</div>`;
+        }
+
+        function renderCatequista(grupo) {
+            if (viewingChildId !== null) return renderVerNino(viewingChildId);
+            const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
+            let listaHTML = ninosDelGrupo.length === 0 ? '<p style="text-align:center;">No hay niños asignados.</p>' : ninosDelGrupo.map(c => {
+                let check = c.asistencia[fechaSeleccionada] ? 'checked' : '';
+                return `<div class="list-item">
+                            <div class="kid-info clickable-row" onclick="verNino('${c.id}')">
+                                <h3>${c.nombre} ${c.apellido}</h3><p style="color:var(--primary);">Ver ficha ></p>
+                            </div>
+                            <label class="switch"><input type="checkbox" ${check} onchange="toggleAsistencia('${c.id}')"><span class="slider"></span></label>
+                        </div>`;
+            }).join('');
+
+            return `${renderSundaySelector()}<div class="card"><h2>Pase de Lista - ${grupo}</h2>${listaHTML}</div>`;
+        }
+
+        function renderVerNino(id) {
+            const nino = childrenDB.find(c => c.id == id);
+            let btnEdit = currentRole === 'coordinador' ? `<button class="btn-outline" onclick="iniciarEdicion()">✏️ Editar Información</button>` : '';
+            return `
+                <div class="card">
+                    <div class="card-header"><button class="icon-btn" onclick="volverLista()">⬅️</button><h2>Ficha del Alumno</h2></div>
+                    <h3 style="margin-bottom:15px; font-size:20px;">${nino.nombre} ${nino.apellido}</h3>
+                    <div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div>
+                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
+                    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
+                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono}">${nino.telefono}</a></div>
+                    ${btnEdit}
+                </div>`;
+        }
+
+        function renderFormularioInscripcion() {
+            return `
+                <div class="card">
+                    <div class="card-header"><button class="icon-btn" onclick="volverResumen()">⬅️</button><h2>Inscribir</h2></div>
+                    <form onsubmit="guardarNino(event)">
+                        <input type="hidden" id="edit-id" value="">
+                        <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" required></div>
+                        <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" required></div>
+                        <div class="form-group"><label>Nacimiento</label><input type="date" id="edit-fecha" required></div>
+                        <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" required></div>
+                        <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" required></div>
+                        <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" required></div>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="edit-bautizado"> Bautizado</label>
+                            <label><input type="checkbox" id="edit-comunion"> Comunión</label>
+                        </div>
+                        <div class="form-group"><label>Grupo</label><select id="edit-grupo">${gruposList.map(g=>`<option value="${g}">${g}</option>`).join('')}</select></div>
+                        <button type="submit" class="btn-primary">Guardar Datos</button>
+                    </form>
+                </div>`;
+        }
+
+        function renderEditarNino(id) {
+            const nino = childrenDB.find(c => c.id == id);
+            setTimeout(() => { // Llenar campos
+                document.getElementById('edit-id').value = nino.id;
+                document.getElementById('edit-nombre').value = nino.nombre;
+                document.getElementById('edit-apellido').value = nino.apellido;
+                document.getElementById('edit-fecha').value = nino.fechaNac;
+                document.getElementById('edit-repre').value = nino.representante;
+                document.getElementById('edit-tlf').value = nino.telefono;
+                document.getElementById('edit-sector').value = nino.sector;
+                document.getElementById('edit-bautizado').checked = nino.bautizado;
+                document.getElementById('edit-comunion').checked = nino.comunion;
+                document.getElementById('edit-grupo').value = nino.grupo;
+            }, 10);
+            return renderFormularioInscripcion().replace('<h2>Inscribir</h2>', '<h2>Editar Perfil</h2>').replace('onclick="volverResumen()"', 'onclick="cancelarEdicion()"');
+        }
+
+        // --- NAVEGACIÓN ---
+        function cambiarMes(delta) { displayMonth += delta; if (displayMonth > 11) { displayMonth=0; displayYear++; } else if (displayMonth < 0) { displayMonth=11; displayYear--; } seleccionarDomingo(formatDateStr(new Date(displayYear, displayMonth, 1))); }
+        function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr; render(); }
+        
+        function abrirInscripcion() { activeTab = 'inscripcion'; render(); }
+        function verGrupo(grupo) { viewingGroup = grupo; render(); }
+        function volverResumen() { activeTab = 'resumen'; viewingGroup = null; render(); }
+        function verNino(id) { viewingChildId = id; isEditingChild = false; render(); }
+        function volverLista() { viewingChildId = null; isEditingChild = false; render(); }
+        function iniciarEdicion() { isEditingChild = true; render(); }
+        function cancelarEdicion() { isEditingChild = false; render(); }
+
+        // --- ACCIONES DE DATOS ---
+        async function guardarNino(e) {
+            e.preventDefault();
+            const ninoData = {
+                id: document.getElementById('edit-id').value || Date.now().toString(),
+                nombre: document.getElementById('edit-nombre').value,
+                apellido: document.getElementById('edit-apellido').value,
+                fechaNac: document.getElementById('edit-fecha').value,
+                representante: document.getElementById('edit-repre').value,
+                telefono: document.getElementById('edit-tlf').value,
+                sector: document.getElementById('edit-sector').value,
+                bautizado: document.getElementById('edit-bautizado').checked,
+                comunion: document.getElementById('edit-comunion').checked,
+                grupo: document.getElementById('edit-grupo').value,
+            };
+
+            // Buscar si ya existe para actualizarlo localmente
+            let index = childrenDB.findIndex(c => c.id == ninoData.id);
+            if(index !== -1) {
+                ninoData.asistencia = childrenDB[index].asistencia; // Mantener asistencia
+                childrenDB[index] = ninoData;
+            } else {
+                ninoData.asistencia = {};
+                childrenDB.push(ninoData);
+            }
+
+            // Sincronizar con Google Sheets
+            let success = await saveToGoogleSheets({ action: 'saveChild', data: ninoData });
+            
+            if(success) {
+                alert('¡Datos guardados correctamente!');
+                if(isEditingChild) { isEditingChild = false; } else { volverResumen(); }
+                render();
+            }
+        }
+
+        async function toggleAsistencia(id) {
+            const nino = childrenDB.find(c => c.id == id);
+            if(nino) {
+                nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
+                render(); // Cambio visual instantáneo
+                
+                // Guardar en 2do plano en Sheets
+                await saveToGoogleSheets({ 
+                    action: 'updateAttendance', 
+                    id: nino.id, 
+                    asistencia: nino.asistencia 
+                });
+            }
+        }
+
+        // Iniciar
+        initData();
+    </script>
+</body>
+</html>
