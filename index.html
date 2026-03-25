@@ -20,11 +20,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
         html, body { 
-            background-color: var(--secondary); 
-            color: var(--text); 
-            height: 100vh; height: 100dvh; 
-            overflow: hidden; 
-            display: flex; flex-direction: column;
+            background-color: var(--secondary); color: var(--text); 
+            height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
         }
         
         header { 
@@ -34,7 +31,6 @@
         }
         .header-title h1 { font-size: 20px; margin-bottom: 2px; }
 
-        /* Botón Agregar más pequeño */
         .add-btn {
             background-color: var(--white); color: var(--primary); border: none;
             width: 32px; height: 32px; border-radius: 50%; font-size: 16px;
@@ -70,7 +66,7 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
         .checkbox-group { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
 
-        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         button.btn-outline { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
         
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
@@ -99,7 +95,6 @@
         .profile-data { margin-bottom: 10px; font-size: 14px; }
         .profile-data strong { color: var(--primary); display: inline-block; width: 120px; }
 
-        /* Pantalla de Carga y Errores */
         #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -117,30 +112,24 @@
         <div id="header-action"></div>
     </header>
     
-    <div id="loader"><div class="spinner"></div><p>Sincronizando...</p></div>
+    <div id="loader"><div class="spinner"></div><p id="loader-text">Sincronizando...</p></div>
 
     <main id="app"></main>
 
     <script>
-        // === 1. CONFIGURACIÓN DE URL DE GOOGLE APPS SCRIPT ===
-        // ¡IMPORTANTE! Pega aquí la URL de tu Web App de Google Sheets cuando la tengas
+        // === PEGA TU URL DE GOOGLE SHEETS AQUÍ ===
         const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx2TUASdWrAf4aHikac71Q1c9rmjc1-3j-7-qHCRhekhErfOBYzIOdvKxm7NKvQ7fhy1g/exec'; 
         
-        // === 2. DETECCIÓN DE ROL POR WHATSAPP (URL PARAMS) ===
         const urlParams = new URLSearchParams(window.location.search);
         let currentRole = null;
         
-        // Si el enlace es: misitio.com/?rol=coordinador
         if (urlParams.get('rol') === 'coordinador') {
             currentRole = 'coordinador';
-        } 
-        // Si el enlace es: misitio.com/?grupo=Grupo 1
-        else if (urlParams.get('grupo')) {
+        } else if (urlParams.get('grupo')) {
             currentRole = urlParams.get('grupo');
             document.getElementById('app-subtitle').innerText = "Catequista: " + currentRole;
         }
 
-        // --- CÁLCULO DE EDAD ---
         function calcularEdadExacta(fechaNacStr) {
             if (!fechaNacStr) return 0;
             let p = fechaNacStr.split('-');
@@ -152,12 +141,8 @@
         }
 
         const monthNames =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        function formatDateStr(date) {
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }
-        function getUltimoDomingo() {
-            let d = new Date(); d.setDate(d.getDate() - d.getDay()); return d;
-        }
+        function formatDateStr(date) { return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`; }
+        function getUltimoDomingo() { let d = new Date(); d.setDate(d.getDate() - d.getDay()); return d; }
 
         let lastSun = getUltimoDomingo();
         let displayYear = lastSun.getFullYear();
@@ -169,61 +154,55 @@
         let viewingChildId = null;  
         let isEditingChild = false; 
 
-        // Base de datos local (Se llenará con Google Sheets)
-        let childrenDB =[];
+        let childrenDB = [];
         const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
         
-        // === LÓGICA DE API CON GOOGLE SHEETS ===
-        function showLoader(show) { document.getElementById('loader').style.display = show ? 'flex' : 'none'; }
+        function showLoader(show, text = "Sincronizando...") { 
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('loader').style.display = show ? 'flex' : 'none'; 
+        }
 
         async function initData() {
             if(!currentRole) {
-                document.getElementById('app').innerHTML = `<div class="error-msg">⚠️ <b>Acceso Denegado.</b><br><br>Por favor, abre la aplicación utilizando el enlace personalizado que te envió el coordinador por WhatsApp.</div>`;
+                document.getElementById('app').innerHTML = `<div class="error-msg">⚠️ <b>Acceso Denegado.</b><br><br>Abre la aplicación utilizando el enlace personalizado de WhatsApp.</div>`;
                 return;
             }
-
-            // Si aún no has puesto la URL de Google Sheets, usamos datos de prueba
             if(!GOOGLE_SHEETS_API_URL) {
-                console.log("Modo de prueba local activo.");
-                childrenDB =[
-                    { id: 1, nombre: 'Juan', apellido: 'Pérez', fechaNac: '2014-05-12', representante: 'Ana Pérez', telefono: '0414-1234567', sector: 'Centro', bautizado: true, comunion: false, grupo: 'Grupo 1', asistencia: {} }
-                ];
-                render();
-                return;
+                console.log("Modo local (Sin URL de Sheets configurada)");
+                childrenDB =[];
+                render(); return;
             }
-
             try {
-                showLoader(true);
+                showLoader(true, "Cargando lista...");
                 const response = await fetch(GOOGLE_SHEETS_API_URL + "?action=get");
                 const data = await response.json();
                 childrenDB = data;
                 render();
             } catch (error) {
-                alert("Error al conectar con la base de datos.");
+                alert("Verifica tu conexión a internet y recarga la página.");
             } finally {
                 showLoader(false);
             }
         }
 
-        async function saveToGoogleSheets(childData) {
-            if(!GOOGLE_SHEETS_API_URL) return true; // Si es local, fingir éxito
+        async function saveToGoogleSheets(payload) {
+            if(!GOOGLE_SHEETS_API_URL) return true; 
             try {
-                showLoader(true);
+                showLoader(true, "Guardando en la nube...");
                 await fetch(GOOGLE_SHEETS_API_URL, {
                     method: 'POST',
-                    body: JSON.stringify(childData),
-                    headers: { 'Content-Type': 'text/plain' } // Evita errores CORS
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'text/plain' } 
                 });
                 return true;
             } catch (e) {
-                alert("Error al guardar en la nube.");
+                alert("Error de conexión. Verifica que tengas señal de internet e intenta guardar nuevamente.");
                 return false;
             } finally {
                 showLoader(false);
             }
         }
 
-        // --- RENDERIZADO PRINCIPAL ---
         function render() {
             const app = document.getElementById('app');
             const headerAction = document.getElementById('header-action');
@@ -303,6 +282,7 @@
         function renderCatequista(grupo) {
             if (viewingChildId !== null) return renderVerNino(viewingChildId);
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
+            
             let listaHTML = ninosDelGrupo.length === 0 ? '<p style="text-align:center;">No hay niños asignados.</p>' : ninosDelGrupo.map(c => {
                 let check = c.asistencia[fechaSeleccionada] ? 'checked' : '';
                 return `<div class="list-item">
@@ -313,7 +293,21 @@
                         </div>`;
             }).join('');
 
-            return `${renderSundaySelector()}<div class="card"><h2>Pase de Lista - ${grupo}</h2>${listaHTML}</div>`;
+            // BOTÓN DE GUARDADO MASIVO PARA EL CATEQUISTA
+            let botonGuardar = ninosDelGrupo.length > 0 
+                ? `<button class="btn-primary" style="margin-top:20px;" onclick="guardarAsistenciaLote('${grupo}')">☁️ Guardar Asistencia en la Nube</button>` 
+                : '';
+
+            return `${renderSundaySelector()}
+                <div class="card">
+                    <h2>Pase de Lista - ${grupo}</h2>
+                    <p style="font-size: 13px; margin-bottom: 15px; color: #666;">
+                        1. Marque los niños presentes.<br>
+                        2. Cuando termine, presione el botón azul para enviarlo.
+                    </p>
+                    <div id="lista-ninos">${listaHTML}</div>
+                    ${botonGuardar}
+                </div>`;
         }
 
         function renderVerNino(id) {
@@ -357,7 +351,7 @@
 
         function renderEditarNino(id) {
             const nino = childrenDB.find(c => c.id == id);
-            setTimeout(() => { // Llenar campos
+            setTimeout(() => { 
                 document.getElementById('edit-id').value = nino.id;
                 document.getElementById('edit-nombre').value = nino.nombre;
                 document.getElementById('edit-apellido').value = nino.apellido;
@@ -372,7 +366,6 @@
             return renderFormularioInscripcion().replace('<h2>Inscribir</h2>', '<h2>Editar Perfil</h2>').replace('onclick="volverResumen()"', 'onclick="cancelarEdicion()"');
         }
 
-        // --- NAVEGACIÓN ---
         function cambiarMes(delta) { displayMonth += delta; if (displayMonth > 11) { displayMonth=0; displayYear++; } else if (displayMonth < 0) { displayMonth=11; displayYear--; } seleccionarDomingo(formatDateStr(new Date(displayYear, displayMonth, 1))); }
         function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr; render(); }
         
@@ -384,7 +377,6 @@
         function iniciarEdicion() { isEditingChild = true; render(); }
         function cancelarEdicion() { isEditingChild = false; render(); }
 
-        // --- ACCIONES DE DATOS ---
         async function guardarNino(e) {
             e.preventDefault();
             const ninoData = {
@@ -400,19 +392,16 @@
                 grupo: document.getElementById('edit-grupo').value,
             };
 
-            // Buscar si ya existe para actualizarlo localmente
             let index = childrenDB.findIndex(c => c.id == ninoData.id);
             if(index !== -1) {
-                ninoData.asistencia = childrenDB[index].asistencia; // Mantener asistencia
+                ninoData.asistencia = childrenDB[index].asistencia; 
                 childrenDB[index] = ninoData;
             } else {
                 ninoData.asistencia = {};
                 childrenDB.push(ninoData);
             }
 
-            // Sincronizar con Google Sheets
             let success = await saveToGoogleSheets({ action: 'saveChild', data: ninoData });
-            
             if(success) {
                 alert('¡Datos guardados correctamente!');
                 if(isEditingChild) { isEditingChild = false; } else { volverResumen(); }
@@ -420,22 +409,35 @@
             }
         }
 
-        async function toggleAsistencia(id) {
+        // AHORA SOLO CAMBIA EL INTERRUPTOR, NO ENVÍA A INTERNET
+        function toggleAsistencia(id) {
             const nino = childrenDB.find(c => c.id == id);
             if(nino) {
                 nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
-                render(); // Cambio visual instantáneo
-                
-                // Guardar en 2do plano en Sheets
-                await saveToGoogleSheets({ 
-                    action: 'updateAttendance', 
-                    id: nino.id, 
-                    asistencia: nino.asistencia 
-                });
+                render(); 
             }
         }
 
-        // Iniciar
+        // NUEVA FUNCIÓN: ENVÍA TODOS LOS NIÑOS JUNTOS CUANDO HAY SEÑAL
+        async function guardarAsistenciaLote(grupo) {
+            const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
+            
+            // Creamos un paquete con la asistencia de todo ese grupo
+            const updates = ninosDelGrupo.map(c => ({
+                id: c.id,
+                asistencia: c.asistencia
+            }));
+
+            let success = await saveToGoogleSheets({ 
+                action: 'updateAttendanceBatch', 
+                updates: updates 
+            });
+
+            if(success) {
+                alert('¡Asistencia guardada en la nube con éxito! ☁️✔️');
+            }
+        }
+
         initData();
     </script>
 </body>
