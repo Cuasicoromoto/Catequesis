@@ -1,0 +1,16 @@
+{
+  "name": "Pastoral App",
+  "short_name": "Pastoral",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#0056b3",
+  "description": "Aplicación de gestión de catequesis.",
+  "icons":[
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
