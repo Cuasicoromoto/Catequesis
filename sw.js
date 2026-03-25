@@ -1,5 +1,5 @@
 // Service Worker Básico para PWA
-const CACHE_NAME = 'pastoral-cache-v0.1';
+const CACHE_NAME = 'pastoral-cache-v0.2';
 const urlsToCache =[
   './',
   './index.html',
