@@ -4,31 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Catequesis App</title>
-    <!-- Enlace vital al Manifest para que sea instalable -->
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#0056b3">
     <style>
         :root {
-            --primary: #0056b3; --secondary: #f4f7f6; --accent: #ffb703;
-            --text: #333; --white: #fff; --success: #2a9d8f;
-            --danger: #e63946; --border: #ddd; --gray: #6c757d;
+            --primary: #0056b3;
+            --secondary: #f4f7f6;
+            --accent: #ffb703;
+            --text: #333;
+            --white: #fff;
+            --success: #2a9d8f;
+            --danger: #e63946;
+            --border: #ddd;
+            --gray: #6c757d;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        html, body { background-color: var(--secondary); color: var(--text); height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
         
-        header { background-color: var(--primary); color: var(--white); padding: 15px; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
+        html, body { 
+            background-color: var(--secondary); color: var(--text); 
+            height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+        }
+        
+        header { 
+            background-color: var(--primary); color: var(--white); padding: 15px; 
+            flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
         .header-title h1 { font-size: 20px; margin-bottom: 2px; }
 
-        .add-btn { background-color: var(--white); color: var(--primary); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: 0.2s; }
-        .add-btn:active { transform: scale(0.95); }
+        .add-btn {
+            background-color: var(--white); color: var(--primary); border: none;
+            width: 32px; height: 32px; border-radius: 50%; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: 0.2s;
+        }
 
-        main#app { flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; }
+        main#app { 
+            flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; 
+            padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; 
+        }
 
         .card { background: var(--white); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .card-header { display: flex; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; margin-bottom: 15px; }
         .card-header h2 { font-size: 18px; color: var(--primary); margin: 0; }
-        .card > h2 { font-size: 18px; margin-bottom: 15px; color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 5px; } 
 
         .icon-btn { background: var(--secondary); color: var(--text); border: none; font-size: 18px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
         
@@ -47,20 +64,13 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
         .checkbox-group { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
 
-        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
         button.btn-outline { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        button.btn-secondary { background-color: var(--secondary); color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
+        
         .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
-        .list-item:last-child { border-bottom: none; }
-        .kid-info { flex-grow: 1; padding-right: 10px; }
         .kid-info h3 { font-size: 16px; margin-bottom: 4px; color: var(--text); }
         .kid-info p { font-size: 12px; color: #666; }
-        .clickable-row { cursor: pointer; transition: background 0.2s; }
-        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; }
-        .badge-present { background-color: var(--success); }
-        .badge-absent { background-color: var(--danger); }
-
+        
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--danger); transition: .4s; border-radius: 34px; }
@@ -70,7 +80,6 @@
 
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .stat-card { background: var(--secondary); padding: 15px; text-align: center; border: 1px solid var(--border); border-radius: 8px; cursor: pointer;}
-        .stat-card h4 { font-size: 14px; margin-bottom: 5px; }
         .stat-card .number { font-size: 24px; font-weight: bold; color: var(--primary); }
         
         .profile-data { margin-bottom: 10px; font-size: 14px; }
@@ -79,136 +88,55 @@
         #loader { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .error-msg { text-align: center; padding: 40px 20px; color: var(--danger); font-size: 16px; }
-
-        /* INTERFAZ DEL MODAL DE INSTALACIÓN */
-        #install-modal {
-            display: none; position: fixed; bottom: 0; left: 0; width: 100%;
-            background: var(--white); padding: 25px 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-            z-index: 1000; border-top-left-radius: 20px; border-top-right-radius: 20px;
-            transform: translateY(100%); animation: slideUp 0.4s forwards ease-out;
-        }
-        @keyframes slideUp { to { transform: translateY(0); } }
-        .install-title { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-weight: bold; display:flex; align-items:center; gap:8px;}
-        .install-text { font-size: 14px; color: var(--text); margin-bottom: 20px; line-height: 1.5; }
-        .install-buttons { display: flex; gap: 10px; }
-
-        /* PANTALLA DE BLOQUEO HORIZONTAL */
-        #landscape-warning {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: var(--primary);
-            color: var(--white);
-            z-index: 99999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 20px;
-        }
-        #landscape-warning h2 { margin-top: 15px; margin-bottom: 10px; font-size: 24px; }
-        #landscape-warning p { font-size: 16px; opacity: 0.9; max-width: 300px; }
         
-        /* Media query que detecta si el teléfono está acostado */
-        @media screen and (orientation: landscape) and (max-height: 600px) {
-            #landscape-warning { display: flex; }
-            header, main, #install-modal, #loader { display: none !important; }
-        }
+        .error-msg { text-align: center; padding: 40px 20px; color: var(--danger); font-size: 16px; }
+        .reset-link { font-size: 12px; color: var(--gray); text-decoration: underline; margin-top: 20px; display: block; cursor: pointer;}
     </style>
 </head>
 <body>
-    <!-- PANTALLA DE BLOQUEO HORIZONTAL -->
-    <div id="landscape-warning">
-        <div style="font-size: 60px; animation: tilt 2s infinite ease-in-out;">📱</div>
-        <h2>Gira tu teléfono</h2>
-        <p>Por favor, coloca tu dispositivo en formato vertical para usar la aplicación correctamente.</p>
-    </div>
+
     <header>
         <div class="header-title">
             <h1 id="app-title">Pastoral App</h1>
-            <p style="font-size: 12px; opacity: 0.8;" id="app-subtitle">Gestión de Catequesis</p>
+            <p style="font-size: 12px; opacity: 0.8;" id="app-subtitle">Sincronizando...</p>
         </div>
         <div id="header-action"></div>
     </header>
     
     <div id="loader"><div class="spinner"></div><p id="loader-text">Sincronizando...</p></div>
 
-    <!-- MODAL DE INSTALACIÓN -->
-    <div id="install-modal">
-        <div class="install-title">📱 ¡Instala la Aplicación!</div>
-        <div class="install-text" id="install-text-dynamic">
-            Agrega <b>Pastoral App</b> a tu pantalla de inicio. Te permitirá acceder más rápido y pasar la lista aunque no tengas internet en la iglesia.
-        </div>
-        <div class="install-buttons" id="install-btn-container">
-            <button class="btn-secondary" style="flex: 1;" onclick="dismissInstall()">Ahora no</button>
-            <button class="btn-primary" style="flex: 2; padding: 12px;" onclick="installApp()">⬇️ Instalar App</button>
-        </div>
-    </div>
-
     <main id="app"></main>
 
     <script>
-        // === REGISTRO DEL SERVICE WORKER (Para que funcione como App PWA) ===
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Error SW', err));
-            });
-        }
-
-        // === LÓGICA DE INSTALACIÓN PWA ===
-        let deferredPrompt;
-        const installModal = document.getElementById('install-modal');
-
-        // Detectar si el usuario está en un iPhone/iPad (Apple no soporta la instalación automática)
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        // Detectar si la app ya está instalada (pantalla completa)
-        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-        if (isIOS && !isStandalone) {
-            // Mostrar instrucciones manuales para iPhone
-            setTimeout(() => {
-                installModal.style.display = 'block';
-                document.getElementById('install-text-dynamic').innerHTML = "<b>En iPhone:</b> Toca el ícono de 'Compartir' (el cuadrado con la flecha ⍗) abajo en tu pantalla y selecciona <b>'Agregar a Inicio' ➕</b>.";
-                document.getElementById('install-btn-container').innerHTML = `<button class="btn-primary" style="flex: 1; padding: 12px;" onclick="dismissInstall()">Entendido</button>`;
-            }, 2000);
-        }
-
-        // Para Android/Chrome: Interceptar el evento de instalación nativo
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            // Mostrar nuestro modal personalizado 2 segundos después de entrar
-            setTimeout(() => { installModal.style.display = 'block'; }, 2000);
-        });
-
-        async function installApp() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                dismissInstall();
-            }
-        }
-
-        function dismissInstall() {
-            installModal.style.display = 'none';
-        }
-
-
-        // === LÓGICA DE LA APLICACIÓN (CATEQUESIS) ===
-        const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx2TUASdWrAf4aHikac71Q1c9rmjc1-3j-7-qHCRhekhErfOBYzIOdvKxm7NKvQ7fhy1g/exec'; // <-- PEGA AQUÍ TU URL
+        // === PEGA TU URL DE GOOGLE SHEETS AQUÍ ===
+                const GOOGLE_SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbx2TUASdWrAf4aHikac71Q1c9rmjc1-3j-7-qHCRhekhErfOBYzIOdvKxm7NKvQ7fhy1g/exec'; // <-- PEGA AQUÍ TU URL 
         
+        // === LÓGICA DE MEMORIA PARA PWA ===
         const urlParams = new URLSearchParams(window.location.search);
         let currentRole = null;
-        
-        if (urlParams.get('rol') === 'coordinador') {
+
+        // 1. Intentar leer de la URL
+        const urlRol = urlParams.get('rol');
+        const urlGrupo = urlParams.get('grupo');
+
+        if (urlRol === 'coordinador') {
             currentRole = 'coordinador';
-        } else if (urlParams.get('grupo')) {
-            currentRole = urlParams.get('grupo');
-            document.getElementById('app-subtitle').innerText = "Catequista: " + currentRole;
+            localStorage.setItem('pastoral_role', 'coordinador');
+        } else if (urlGrupo) {
+            currentRole = urlGrupo;
+            localStorage.setItem('pastoral_role', urlGrupo);
+        } else {
+            // 2. Si no hay URL (app instalada), intentar leer de la memoria del teléfono
+            currentRole = localStorage.getItem('pastoral_role');
         }
 
+        // Configurar subtitulo según rol detectado
+        if (currentRole) {
+            document.getElementById('app-subtitle').innerText = 
+                currentRole === 'coordinador' ? "Coordinador General" : "Catequista: " + currentRole;
+        }
+
+        // --- FUNCIONES AUXILIARES ---
         function calcularEdadExacta(fechaNacStr) {
             if (!fechaNacStr) return 0;
             let p = fechaNacStr.split('-');
@@ -243,11 +171,14 @@
 
         async function initData() {
             if(!currentRole) {
-                document.getElementById('app').innerHTML = `<div class="error-msg">⚠️ <b>Acceso Denegado.</b><br><br>Abre la aplicación utilizando el enlace personalizado de WhatsApp.</div>`;
+                document.getElementById('app').innerHTML = `
+                    <div class="error-msg">
+                        ⚠️ <b>Acceso Denegado.</b><br><br>
+                        Por favor, abre la aplicación utilizando el enlace personalizado que te envió el coordinador por WhatsApp por primera vez.
+                        <br><br>
+                        <span class="reset-link" onclick="localStorage.clear(); location.reload();">Limpiar memoria</span>
+                    </div>`;
                 return;
-            }
-            if(!GOOGLE_SHEETS_API_URL) {
-                console.log("Modo local"); childrenDB =[]; render(); return;
             }
             try {
                 showLoader(true, "Cargando lista...");
@@ -256,16 +187,15 @@
                 childrenDB = data;
                 render();
             } catch (error) {
-                alert("Verifica tu conexión a internet y recarga la página.");
+                alert("Error de conexión. Recarga la página.");
             } finally {
                 showLoader(false);
             }
         }
 
         async function saveToGoogleSheets(payload) {
-            if(!GOOGLE_SHEETS_API_URL) return true; 
             try {
-                showLoader(true, "Guardando en la nube...");
+                showLoader(true, "Guardando...");
                 await fetch(GOOGLE_SHEETS_API_URL, {
                     method: 'POST',
                     body: JSON.stringify(payload),
@@ -273,7 +203,7 @@
                 });
                 return true;
             } catch (e) {
-                alert("Error de conexión. Verifica que tengas señal de internet e intenta guardar nuevamente.");
+                alert("Error de conexión al guardar.");
                 return false;
             } finally {
                 showLoader(false);
@@ -291,8 +221,11 @@
                 headerAction.innerHTML = '';
             }
 
-            if (currentRole === 'coordinador') app.innerHTML = renderCoordinador();
-            else app.innerHTML = renderCatequista(currentRole);
+            if (currentRole === 'coordinador') {
+                app.innerHTML = renderCoordinador();
+            } else {
+                app.innerHTML = renderCatequista(currentRole);
+            }
         }
 
         function renderSundaySelector() {
@@ -330,63 +263,51 @@
                 const total = ninosGrupo.length;
                 const porcentaje = total === 0 ? 0 : Math.round((presentes/total)*100);
                 let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
-                
                 return `
                 <div class="stat-card" onclick="verGrupo('${g}')">
-                    <h4>${g}</h4><div class="number">${presentes} / ${total}</div>
-                    <div style="color: ${colorClass}; font-weight:bold; font-size:12px;">${porcentaje}% Asistencia</div>
+                    <h4 style="font-size:14px; margin-bottom:5px;">${g}</h4><div class="number">${presentes} / ${total}</div>
+                    <div style="color: ${colorClass}; font-weight:bold; font-size:12px;">${porcentaje}%</div>
                 </div>`;
             }).join('');
-
-            return `${renderSundaySelector()}<div class="card"><h2>Asistencia General</h2><div class="stats-grid">${cards}</div></div>`;
+            return `${renderSundaySelector()}<div class="card"><h2>Resumen General</h2><div class="stats-grid">${cards}</div></div>`;
         }
 
         function renderListaGrupoCoordinador(grupo) {
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
             let listaHTML = ninosGrupo.length === 0 ? '<p style="text-align:center;">No hay niños.</p>' : ninosGrupo.map(n => {
                 let badge = n.asistencia[fechaSeleccionada] ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
-                return `<div class="list-item clickable-row" onclick="verNino('${n.id}')">
+                return `<div class="list-item" onclick="verNino('${n.id}')">
                             <div class="kid-info"><h3>${n.nombre} ${n.apellido}</h3></div><div>${badge}</div>
                         </div>`;
             }).join('');
-
             return `${renderSundaySelector()}<div class="card"><div class="card-header"><button class="icon-btn" onclick="volverResumen()">⬅️</button><h2>${grupo}</h2></div>${listaHTML}</div>`;
         }
 
         function renderCatequista(grupo) {
             if (viewingChildId !== null) return renderVerNino(viewingChildId);
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
-            
             let listaHTML = ninosDelGrupo.length === 0 ? '<p style="text-align:center;">No hay niños asignados.</p>' : ninosDelGrupo.map(c => {
                 let check = c.asistencia[fechaSeleccionada] ? 'checked' : '';
                 return `<div class="list-item">
-                            <div class="kid-info clickable-row" onclick="verNino('${c.id}')">
+                            <div class="kid-info" onclick="verNino('${c.id}')">
                                 <h3>${c.nombre} ${c.apellido}</h3><p style="color:var(--primary);">Ver ficha ></p>
                             </div>
                             <label class="switch"><input type="checkbox" ${check} onchange="toggleAsistencia('${c.id}')"><span class="slider"></span></label>
                         </div>`;
             }).join('');
-
-            let botonGuardar = ninosDelGrupo.length > 0 ? `<button class="btn-primary" style="margin-top:20px;" onclick="guardarAsistenciaLote('${grupo}')">☁️ Guardar Asistencia en la Nube</button>` : '';
-
             return `${renderSundaySelector()}
                 <div class="card">
                     <h2>Pase de Lista - ${grupo}</h2>
-                    <p style="font-size: 13px; margin-bottom: 15px; color: #666;">
-                        1. Marque los niños presentes.<br>
-                        2. Cuando termine, presione el botón azul para enviarlo.
-                    </p>
                     <div id="lista-ninos">${listaHTML}</div>
-                    ${botonGuardar}
+                    ${ninosDelGrupo.length > 0 ? `<button class="btn-primary" style="margin-top:20px;" onclick="guardarAsistenciaLote('${grupo}')">☁️ Guardar en la Nube</button>` : ''}
                 </div>`;
         }
 
         function renderVerNino(id) {
             const nino = childrenDB.find(c => c.id == id);
-            let btnEdit = currentRole === 'coordinador' ? `<button class="btn-outline" onclick="iniciarEdicion()">✏️ Editar Información</button>` : '';
             return `
                 <div class="card">
-                    <div class="card-header"><button class="icon-btn" onclick="volverLista()">⬅️</button><h2>Ficha del Alumno</h2></div>
+                    <div class="card-header"><button class="icon-btn" onclick="volverLista()">⬅️</button><h2>Ficha Alumno</h2></div>
                     <h3 style="margin-bottom:15px; font-size:20px;">${nino.nombre} ${nino.apellido}</h3>
                     <div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div>
                     <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
@@ -394,7 +315,7 @@
                     <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
                     <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
                     <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono}">${nino.telefono}</a></div>
-                    ${btnEdit}
+                    ${currentRole === 'coordinador' ? `<button class="btn-outline" onclick="iniciarEdicion()">✏️ Editar</button>` : ''}
                 </div>`;
         }
 
@@ -423,14 +344,23 @@
         function renderEditarNino(id) {
             const nino = childrenDB.find(c => c.id == id);
             setTimeout(() => { 
-                document.getElementById('edit-id').value = nino.id; document.getElementById('edit-nombre').value = nino.nombre; document.getElementById('edit-apellido').value = nino.apellido; document.getElementById('edit-fecha').value = nino.fechaNac; document.getElementById('edit-repre').value = nino.representante; document.getElementById('edit-tlf').value = nino.telefono; document.getElementById('edit-sector').value = nino.sector; document.getElementById('edit-bautizado').checked = nino.bautizado; document.getElementById('edit-comunion').checked = nino.comunion; document.getElementById('edit-grupo').value = nino.grupo;
+                document.getElementById('edit-id').value = nino.id;
+                document.getElementById('edit-nombre').value = nino.nombre;
+                document.getElementById('edit-apellido').value = nino.apellido;
+                document.getElementById('edit-fecha').value = nino.fechaNac;
+                document.getElementById('edit-repre').value = nino.representante;
+                document.getElementById('edit-tlf').value = nino.telefono;
+                document.getElementById('edit-sector').value = nino.sector;
+                document.getElementById('edit-bautizado').checked = nino.bautizado;
+                document.getElementById('edit-comunion').checked = nino.comunion;
+                document.getElementById('edit-grupo').value = nino.grupo;
             }, 10);
             return renderFormularioInscripcion().replace('<h2>Inscribir</h2>', '<h2>Editar Perfil</h2>').replace('onclick="volverResumen()"', 'onclick="cancelarEdicion()"');
         }
 
+        // --- NAVEGACIÓN Y ACCIONES ---
         function cambiarMes(delta) { displayMonth += delta; if (displayMonth > 11) { displayMonth=0; displayYear++; } else if (displayMonth < 0) { displayMonth=11; displayYear--; } seleccionarDomingo(formatDateStr(new Date(displayYear, displayMonth, 1))); }
         function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr; render(); }
-        
         function abrirInscripcion() { activeTab = 'inscripcion'; render(); }
         function verGrupo(grupo) { viewingGroup = grupo; render(); }
         function volverResumen() { activeTab = 'resumen'; viewingGroup = null; render(); }
@@ -443,17 +373,21 @@
             e.preventDefault();
             const ninoData = {
                 id: document.getElementById('edit-id').value || Date.now().toString(),
-                nombre: document.getElementById('edit-nombre').value, apellido: document.getElementById('edit-apellido').value, fechaNac: document.getElementById('edit-fecha').value,
-                representante: document.getElementById('edit-repre').value, telefono: document.getElementById('edit-tlf').value, sector: document.getElementById('edit-sector').value,
-                bautizado: document.getElementById('edit-bautizado').checked, comunion: document.getElementById('edit-comunion').checked, grupo: document.getElementById('edit-grupo').value,
+                nombre: document.getElementById('edit-nombre').value,
+                apellido: document.getElementById('edit-apellido').value,
+                fechaNac: document.getElementById('edit-fecha').value,
+                representante: document.getElementById('edit-repre').value,
+                telefono: document.getElementById('edit-tlf').value,
+                sector: document.getElementById('edit-sector').value,
+                bautizado: document.getElementById('edit-bautizado').checked,
+                comunion: document.getElementById('edit-comunion').checked,
+                grupo: document.getElementById('edit-grupo').value,
             };
-
             let index = childrenDB.findIndex(c => c.id == ninoData.id);
             if(index !== -1) { ninoData.asistencia = childrenDB[index].asistencia; childrenDB[index] = ninoData; } 
             else { ninoData.asistencia = {}; childrenDB.push(ninoData); }
-
             let success = await saveToGoogleSheets({ action: 'saveChild', data: ninoData });
-            if(success) { alert('¡Datos guardados!'); if(isEditingChild) { isEditingChild = false; } else { volverResumen(); } render(); }
+            if(success) { alert('Guardado exitoso'); if(isEditingChild) { isEditingChild = false; } else { volverResumen(); } render(); }
         }
 
         function toggleAsistencia(id) {
@@ -465,7 +399,7 @@
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
             const updates = ninosDelGrupo.map(c => ({ id: c.id, asistencia: c.asistencia }));
             let success = await saveToGoogleSheets({ action: 'updateAttendanceBatch', updates: updates });
-            if(success) { alert('¡Asistencia guardada en la nube con éxito! ☁️✔️'); }
+            if(success) alert('¡Asistencia sincronizada! ☁️✔️');
         }
 
         initData();
