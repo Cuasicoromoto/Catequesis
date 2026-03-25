@@ -92,10 +92,38 @@
         .install-title { font-size: 18px; color: var(--primary); margin-bottom: 10px; font-weight: bold; display:flex; align-items:center; gap:8px;}
         .install-text { font-size: 14px; color: var(--text); margin-bottom: 20px; line-height: 1.5; }
         .install-buttons { display: flex; gap: 10px; }
+
+        /* PANTALLA DE BLOQUEO HORIZONTAL */
+        #landscape-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: var(--primary);
+            color: var(--white);
+            z-index: 99999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+        #landscape-warning h2 { margin-top: 15px; margin-bottom: 10px; font-size: 24px; }
+        #landscape-warning p { font-size: 16px; opacity: 0.9; max-width: 300px; }
+        
+        /* Media query que detecta si el teléfono está acostado */
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            #landscape-warning { display: flex; }
+            header, main, #install-modal, #loader { display: none !important; }
+        }
     </style>
 </head>
 <body>
-
+    <!-- PANTALLA DE BLOQUEO HORIZONTAL -->
+    <div id="landscape-warning">
+        <div style="font-size: 60px; animation: tilt 2s infinite ease-in-out;">📱</div>
+        <h2>Gira tu teléfono</h2>
+        <p>Por favor, coloca tu dispositivo en formato vertical para usar la aplicación correctamente.</p>
+    </div>
     <header>
         <div class="header-title">
             <h1 id="app-title">Pastoral App</h1>
