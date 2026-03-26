@@ -1,84 +1,503 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="manifest" href="manifest.json">
-    <title>Catequesis App</title>
+    <title>Catequesis App - PWA</title>
     <style>
-        /* (Se mantienen todos tus estilos originales intactos) */
-        :root { --primary: #0056b3; --secondary: #f4f7f6; --accent: #ffb703; --text: #333; --white: #fff; --success: #2a9d8f; --danger: #e63946; --border: #ddd; --gray: #6c757d; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        html, body { background-color: var(--secondary); color: var(--text); height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
-        header { background-color: var(--primary); color: var(--white); padding: 15px; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; display: flex; justify-content: space-between; align-items: center; }
-        .header-title { text-align: left; }
-        .header-title h1 { font-size: 22px; margin-bottom: 2px; }
-
-        /* Estilo para el nuevo botón de instalación */
-        #installBtn {
-            display: none;
-            background-color: var(--accent);
+        :root {
+            --primary: #0056b3;
+            --secondary: #f4f7f6;
+            --accent: #ffb703;
+            --text: #333;
+            --white: #fff;
+            --success: #2a9d8f;
+            --danger: #e63946;
+            --border: #ddd;
+            --gray: #6c757d;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        /* Adaptación al alto del móvil y eliminación de scroll global */
+        html,
+        body {
+            background-color: var(--secondary);
+            color: var(--text);
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Header alineado a la izquierda con flexbox */
+        header {
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            text-align: left;
+        }
+        
+        .header-title h1 {
+            font-size: 22px;
+            margin-bottom: 2px;
+        }
+        
+        /* Botón Inscribir (Encabezado) */
+        .add-btn {
+            background-color: var(--white);
+            color: var(--primary);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s;
+        }
+        
+        .add-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Selector de rol */
+        .role-selector {
+            background-color: var(--primary);
+            padding: 0 15px 15px 15px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .role-selector select {
+            width: 100%;
+            max-width: 400px;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+        }
+        
+        /* Contenedor Principal con Scroll Interno */
+        main#app {
+            flex-grow: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 15px;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        /* Tarjetas */
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border)
+        }
+        
+        /* Header de Tarjeta (Con botón volver en emoji) */
+        .card-header {
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .card-header h2 {
+            font-size: 18px;
+            color: var(--primary);
+            margin: 0;
+        }
+        
+        .card>h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 5px;
+        }
+        
+        .icon-btn {
+            background: var(--secondary);
             color: var(--text);
             border: none;
-            padding: 8px 12px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 13px;
+            font-size: 18px;
+            /*width: 36px; height: 36px;*/
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            border-radius: 50%;
             margin-right: 10px;
+            transition: 0.2s;
+            flex-shrink: 0;
         }
-
-        .add-btn { background-color: var(--white); color: var(--primary); border: none; width: 30px; height: 30px; border-radius: 50%; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-        .role-selector { background-color: var(--primary); padding: 0 15px 15px 15px; text-align: center; flex-shrink: 0; }
-        .role-selector select { width: 100%; max-width: 400px; padding: 10px; border-radius: 8px; border: none; font-size: 16px; }
-        main#app { flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 15px; width: 100%; max-width: 800px; margin: 0 auto; }
-        .card { background: var(--white); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid var(--border) }
-        .card-header { display: flex; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 5px; margin-bottom: 15px; }
-        .card-header h2 { font-size: 18px; color: var(--primary); margin: 0; }
-        .icon-btn { background: var(--secondary); color: var(--text); border: none; font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; margin-right: 10px; transition: 0.2s; flex-shrink: 0; }
-        .month-nav { display: flex; align-items: center; justify-content: space-between; background: var(--white); padding: 5px 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
-        .btn-icon-month { background: var(--secondary); color: var(--primary); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .sundays-row { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .sunday-btn { flex: 1; min-width: 55px; background: var(--white); border: 1px solid var(--border); color: var(--gray); padding: 8px 5px; border-radius: 10px; font-size: 12px; text-align: center; cursor: pointer; }
-        .sunday-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
-        .checkbox-group { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
-        button.btn-primary { background-color: var(--primary); color: var(--white); border: none; padding: 12px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button.btn-outline { background-color: transparent; color: var(--primary); border: 2px solid var(--primary); padding: 12px; width: 100%; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px;}
-        button.btn-danger-outline { background-color: transparent; color: var(--danger); border: 2px solid var(--danger); padding: 12px; width: 100%; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; outline: none; }
-        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-top: 1px solid var(--border); }
-        .kid-info h3 { font-size: 14px; color: var(--text); font-weight:400;}
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; width: 4rem; text-align: center; }
-        .badge-present { background-color: var(--success); }
-        .badge-absent { background-color: var(--danger); }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; flex-shrink: 0; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--danger); transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--success); }
-        input:checked + .slider:before { transform: translateX(20px); }
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .stat-card { background: var(--secondary); padding: 15px; text-align: center; border: 1px solid var(--border); }
-        .profile-data { margin-bottom: 10px; font-size: 14px; }
-        .profile-data strong { color: var(--primary); display: inline-block; width: 120px; font-weight: 400}
+        
+        .icon-btn:hover {
+            background-color: var(--border);
+        }
+        
+        /* Componente Selector de Domingos */
+        .month-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--white);
+            padding: 5px 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+        
+        .btn-icon-month {
+            background: var(--secondary);
+            color: var(--primary);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .month-nav span {
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--primary);
+            text-transform: capitalize;
+        }
+        
+        .sundays-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .sunday-btn {
+            flex: 1;
+            min-width: 55px;
+            background: var(--white);
+            border: 1px solid var(--border);
+            color: var(--gray);
+            padding: 8px 5px;
+            border-radius: 10px;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .sunday-btn strong {
+            font-size: 18px;
+            display: block;
+            margin-top: 2px;
+            color: var(--text);
+        }
+        
+        .sunday-btn.active {
+            background: var(--primary);
+            color: var(--white);
+            border-color: var(--primary);
+        }
+        
+        .sunday-btn.active strong {
+            color: var(--white);
+        }
+        
+        /* Formularios */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input[type="text"],
+        .form-group input[type="date"],
+        .form-group input[type="tel"],
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        /* Botones generales */
+        button.btn-primary {
+            background-color: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        button.btn-primary:hover {
+            background-color: #004494;
+        }
+        
+        button.btn-outline {
+            background-color: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+        
+        button.btn-outline:hover {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+        
+        /* Botón de peligro (Eliminar) corregido para evitar color persistente */
+        button.btn-danger-outline {
+            background-color: transparent;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+            outline: none;
+        }
+        
+        button.btn-danger-outline:hover,
+        button.btn-danger-outline:active {
+            background-color: var(--danger);
+            color: var(--white);
+        }
+        
+        /* Listas y Tablas */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-top: 1px solid var(--border);
+        }
+        
+        .list-item:last-child {
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .kid-info {
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+        
+        .kid-info h3 {
+            font-size: 14px;
+            color: var(--text);
+            font-weight: 400;
+        }
+        
+        .kid-info p {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .clickable {
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 8px;
+        }
+        
+        .clickable:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .clickable-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .clickable-row:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            width: 4rem;
+            text-align: center;
+        }
+        
+        .badge-present {
+            background-color: var(--success);
+        }
+        
+        .badge-absent {
+            background-color: var(--danger);
+        }
+        
+        /* Switch (Asistencia) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--danger);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked+.slider {
+            background-color: var(--success);
+        }
+        
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-card {
+            background: var(--secondary);
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        
+        .stat-card h4 {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-card .percentage {
+            font-size: 12px;
+            color: var(--text);
+        }
+        
+        /* Vista Perfil */
+        .profile-data {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .profile-data strong {
+            color: var(--primary);
+            display: inline-block;
+            width: 120px;
+            font-weight: 400
+        }
     </style>
 </head>
-<body>
 
+<body>
+    
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia<br>Nuestra Señora de Coromoto</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia x<br>Nuestra Señora de Coromoto</p>
         </div>
-        <div style="display: flex; align-items: center;">
-            <button id="installBtn">Instalar App</button>
-            <div id="header-action"></div>
+        <div id="header-action">
         </div>
     </header>
     
-    <div class="role-selector" id="roleSelectorContainer">
+    <div class="role-selector">
         <select id="roleSelect" onchange="changeRole()">
             <option value="coordinador">Vista: Coordinador General</option>
             <option value="Grupo 1">Vista: Catequista - Grupo 1</option>
@@ -89,205 +508,464 @@
             <option value="Grupo 6">Vista: Catequista - Grupo 6</option>
         </select>
     </div>
-
+    
     <main id="app"></main>
-
+    
     <script>
-        // --- LÓGICA DE PWA Y BOTÓN INSTALAR ---
-        let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
-
-        // Registro del Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block'; // Mostrar botón solo si es instalable
-        });
-
-        installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
-                deferredPrompt = null;
-            }
-        });
-
-        // --- LÓGICA DE ACCESO POR LINK DE WHATSAPP ---
-        function verificarAcceso() {
-            const params = new URLSearchParams(window.location.search);
-            const grupoParam = params.get('grupo');
-            
-            if (grupoParam) {
-                // Si viene un grupo en la URL, bloqueamos el selector y fijamos el rol
-                currentRole = grupoParam;
-                document.getElementById('roleSelect').value = grupoParam;
-                document.getElementById('roleSelectorContainer').style.display = 'none';
-            }
-            // Si NO hay parámetro, la app abre normal (Vista Coordinador)
-            render();
-        }
-
-        // --- (AQUÍ COMIENZA TU CÓDIGO ORIGINAL SIN CAMBIOS EN LA LÓGICA DE DATOS) ---
+        // --- CÁLCULO DE EDAD EXACTA ---
         function calcularEdadExacta(fechaNacStr) {
             if (!fechaNacStr) return 0;
             let partes = fechaNacStr.split('-');
             let fechaNacimiento = new Date(partes[0], partes[1] - 1, partes[2]);
             let hoy = new Date();
+            
             let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
             let diferenciaMes = hoy.getMonth() - fechaNacimiento.getMonth();
-            if (diferenciaMes < 0 || (diferenciaMes === 0 && hoy.getDate() < fechaNacimiento.getDate())) { edad--; }
+            
+            if (diferenciaMes < 0 || (diferenciaMes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+                edad--;
+            }
             return edad;
         }
-
-        const monthNames =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        
+        // --- CALENDARIO: LÓGICA DE DOMINGOS ---
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        
         function formatDateStr(date) {
             let y = date.getFullYear();
             let m = String(date.getMonth() + 1).padStart(2, '0');
             let d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
         }
-
+        
         function getUltimoDomingo() {
             let d = new Date();
-            d.setDate(d.getDate() - d.getDay()); 
+            d.setDate(d.getDate() - d.getDay());
             return d;
         }
-
+        
+        // --- VARIABLES GLOBALES DE ESTADO ---
         let lastSun = getUltimoDomingo();
         let displayYear = lastSun.getFullYear();
         let displayMonth = lastSun.getMonth();
         let fechaSeleccionada = formatDateStr(lastSun);
-        let currentRole = 'coordinador'; 
-        let activeTab = 'resumen'; 
-        let viewingGroup = null;    
-        let viewingChildId = null;  
-        let isEditingChild = false; 
-
+        
+        // NUEVO: Leer qué rol viene en el link (URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramRol = urlParams.get('rol');
+        
+        let currentRole = 'coordinador'; // Por defecto es coordinador
+        
+        if (paramRol) {
+            currentRole = paramRol;
+            // Si entra con un link de grupo, ocultamos el selector para que no hagan trampa
+            document.querySelector('.role-selector').style.display = 'none';
+        }
+        
+        let activeTab = 'resumen';
+        let viewingGroup = null;
+        let viewingChildId = null;
+        let isEditingChild = false;
+        
+        // --- BASE DE DATOS CON LOCALSTORAGE ---
         let childrenDB = JSON.parse(localStorage.getItem('catequesis_db')) || [
             { id: 1, nombre: 'Juan', apellido: 'Pérez', fechaNac: '2014-05-12', representante: 'Ana Pérez', telefono: '0414-1234567', sector: 'Centro', bautizado: true, comunion: false, grupo: 'Grupo 1', asistencia: {} },
             { id: 2, nombre: 'María', apellido: 'Gómez', fechaNac: '2013-08-22', representante: 'Carlos Gómez', telefono: '0412-9876543', sector: 'La Paz', bautizado: true, comunion: true, grupo: 'Grupo 1', asistencia: {} },
             { id: 3, nombre: 'Luis', apellido: 'Rodríguez', fechaNac: '2015-01-10', representante: 'Sofia Rodríguez', telefono: '0416-5554433', sector: 'El Valle', bautizado: false, comunion: false, grupo: 'Grupo 2', asistencia: {} },
             { id: 4, nombre: 'Camila', apellido: 'Díaz', fechaNac: '2012-11-30', representante: 'Pedro Díaz', telefono: '0424-1112233', sector: 'Las Rosas', bautizado: true, comunion: false, grupo: 'Grupo 6', asistencia: {} }
         ];
-
-        function guardarDatos() { localStorage.setItem('catequesis_db', JSON.stringify(childrenDB)); }
-        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
         
+        function guardarDatos() {
+            localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
+        }
+        
+        const gruposList = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+        
+        // --- FUNCIONES DE RENDERIZADO PRINCIPAL ---
         function render() {
             const app = document.getElementById('app');
             const headerAction = document.getElementById('header-action');
             app.innerHTML = '';
+            
             if (currentRole === 'coordinador' && activeTab === 'resumen' && viewingGroup === null && viewingChildId === null) {
                 headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()" title="Inscribir Nuevo Niño">➕</button>`;
-            } else { headerAction.innerHTML = ''; }
-            if (currentRole === 'coordinador') { app.innerHTML = renderCoordinador(); } 
-            else { app.innerHTML = renderCatequista(currentRole); }
+            } else {
+                headerAction.innerHTML = '';
+            }
+            
+            if (currentRole === 'coordinador') {
+                app.innerHTML = renderCoordinador();
+            } else {
+                app.innerHTML = renderCatequista(currentRole);
+            }
         }
-
+        
         function renderSundaySelector() {
-            let sundays =[];
+            let sundays = [];
             let d = new Date(displayYear, displayMonth, 1);
-            while (d.getDay() !== 0) d.setDate(d.getDate() + 1); 
-            while (d.getMonth() === displayMonth) { sundays.push(new Date(d)); d.setDate(d.getDate() + 7); }
+            while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+            
+            while (d.getMonth() === displayMonth) {
+                sundays.push(new Date(d));
+                d.setDate(d.getDate() + 7);
+            }
+            
             let sundaysHtml = sundays.map(sun => {
                 let dateStr = formatDateStr(sun);
                 let dayNum = sun.getDate();
                 let isActive = dateStr === fechaSeleccionada ? 'active' : '';
-                return `<div class="sunday-btn ${isActive}" onclick="seleccionarDomingo('${dateStr}')">Dom <strong>${dayNum}</strong></div>`;
+                return `
+                    <div class="sunday-btn ${isActive}" onclick="seleccionarDomingo('${dateStr}')">
+                        Dom <strong>${dayNum}</strong>
+                    </div>`;
             }).join('');
-            return `<div class="month-nav"><button class="btn-icon-month" onclick="cambiarMes(-1)">◀</button><span>${monthNames[displayMonth]} ${displayYear}</span><button class="btn-icon-month" onclick="cambiarMes(1)">▶</button></div><div class="sundays-row">${sundaysHtml}</div>`;
+            
+            return `
+                <div class="month-nav">
+                    <button class="btn-icon-month" onclick="cambiarMes(-1)">◀</button>
+                    <span>${monthNames[displayMonth]} ${displayYear}</span>
+                    <button class="btn-icon-month" onclick="cambiarMes(1)">▶</button>
+                </div>
+                <div class="sundays-row">
+                    ${sundaysHtml}
+                </div>
+            `;
         }
-
+        
         function renderCoordinador() {
-            if (activeTab === 'inscripcion') return renderFormularioInscripcion();
-            if (viewingChildId !== null) return isEditingChild ? renderEditarNino(viewingChildId) : renderVerNino(viewingChildId);
-            if (viewingGroup !== null) return renderListaGrupoCoordinador(viewingGroup);
-            return renderTarjetasResumen();
+            let html = '';
+            if (activeTab === 'inscripcion') {
+                html += renderFormularioInscripcion();
+            }
+            else if (activeTab === 'resumen') {
+                if (viewingChildId !== null) {
+                    if (isEditingChild) {
+                        html += renderEditarNino(viewingChildId);
+                    } else {
+                        html += renderVerNino(viewingChildId);
+                    }
+                } else if (viewingGroup !== null) {
+                    html += renderListaGrupoCoordinador(viewingGroup);
+                } else {
+                    html += renderTarjetasResumen();
+                }
+            }
+            return html;
         }
-
+        
         function renderFormularioInscripcion() {
-            return `<div class="card"><div class="card-header"><button class="icon-btn" onclick="volverResumen()">⬅️</button><h2>Inscribir Nuevo</h2></div><form onsubmit="registrarNino(event)"><div class="form-group"><label>Nombres</label><input type="text" id="reg-nombre" required></div><div class="form-group"><label>Apellidos</label><input type="text" id="reg-apellido" required></div><div class="form-group"><label>Fecha de Nac.</label><input type="date" id="reg-fecha" required></div><div class="form-group"><label>Representante</label><input type="text" id="reg-repre" required></div><div class="form-group"><label>Teléfono</label><input type="tel" id="reg-tlf" required></div><div class="form-group"><label>Sector</label><input type="text" id="reg-sector" required></div><div class="checkbox-group"><label><input type="checkbox" id="reg-bautizado"> Bautizado</label><label><input type="checkbox" id="reg-comunion"> Comunión</label></div><div class="form-group"><label>Asignar a Grupo</label><select id="reg-grupo" required>${gruposList.map(g => `<option value="${g}">${g}</option>`).join('')}</select></div><button type="submit" class="btn-primary">Guardar Inscripción</button></form></div>`;
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <button class="icon-btn" onclick="volverResumen()">⬅️</button>
+                        <h2>Inscribir Nuevo</h2>
+                    </div>
+                    <form onsubmit="registrarNino(event)">
+                        <div class="form-group"><label>Nombres</label><input type="text" id="reg-nombre" required></div>
+                        <div class="form-group"><label>Apellidos</label><input type="text" id="reg-apellido" required></div>
+                        <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="reg-fecha" required></div>
+                        <div class="form-group"><label>Representante</label><input type="text" id="reg-repre" required></div>
+                        <div class="form-group"><label>Teléfono</label><input type="tel" id="reg-tlf" required></div>
+                        <div class="form-group"><label>Sector</label><input type="text" id="reg-sector" required></div>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="reg-bautizado"> Bautizado</label>
+                            <label><input type="checkbox" id="reg-comunion"> Comunión</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Asignar a Grupo</label>
+                            <select id="reg-grupo" required>
+                                ${gruposList.map(g => `<option value="${g}">${g}</option>`).join('')}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Guardar Inscripción</button>
+                    </form>
+                </div>
+            `;
         }
-
+        
         function renderTarjetasResumen() {
             let cards = gruposList.map(g => {
                 const ninosGrupo = childrenDB.filter(c => c.grupo === g);
                 const presentes = ninosGrupo.filter(c => c.asistencia[fechaSeleccionada]).length;
                 const total = ninosGrupo.length;
-                const porcentaje = total === 0 ? 0 : Math.round((presentes/total)*100);
+                const porcentaje = total === 0 ? 0 : Math.round((presentes / total) * 100);
                 let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
-                return `<div class="stat-card clickable" onclick="verGrupo('${g}')"><h4>${g}</h4><div class="number">${presentes} / ${total}</div><div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div></div>`;
+                
+                return `
+                <div class="stat-card clickable" onclick="verGrupo('${g}')">
+                    <h4>${g}</h4>
+                    <div class="number">${presentes} / ${total}</div>
+                    <div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div>
+                </div>
+                `;
             }).join('');
-            return `${renderSundaySelector()}<div class="card"><h2>Resumen de Asistencia</h2><div class="stats-grid">${cards}</div></div>`;
+            
+            return `
+                ${renderSundaySelector()}
+                <div class="card">
+                    <h2>Resumen de Asistencia</h2>
+                    <div class="stats-grid">
+                        ${cards}
+                    </div>
+                </div>
+            `;
         }
-
+        
         function renderListaGrupoCoordinador(grupo) {
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
-            let listaHTML = ninosGrupo.length === 0 ? '<p>No hay niños inscritos.</p>' : ninosGrupo.map(n => {
-                let estaPresente = n.asistencia[fechaSeleccionada] === true;
-                let badge = estaPresente ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
-                return `<div class="list-item clickable-row" onclick="verNino(${n.id})"><div class="kid-info"><h3>${n.nombre} ${n.apellido}</h3></div><div>${badge}</div></div>`;
-            }).join('');
-            return `${renderSundaySelector()}<div class="card"><div class="card-header"><button class="icon-btn" onclick="volverResumen()">⬅️</button><h2>${grupo}</h2></div>${listaHTML}</div>`;
+            let listaHTML = ninosGrupo.length === 0 ?
+                '<p style="color:#666; text-align:center; margin-top:15px;">No hay niños inscritos en este grupo.</p>' :
+                ninosGrupo.map(n => {
+                    let estaPresente = n.asistencia[fechaSeleccionada] === true;
+                    let badge = estaPresente ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
+                    return `
+                        <div class="list-item clickable-row" onclick="verNino(${n.id})">
+                            <div class="kid-info">
+                                <h3>${n.nombre} ${n.apellido}</h3>
+                            </div>
+                            <div>${badge}</div>
+                        </div>
+                    `;
+                }).join('');
+            
+            return `
+                ${renderSundaySelector()}
+                <div class="card">
+                    <div class="card-header">
+                        <button class="icon-btn" onclick="volverResumen()">⬅️</button>
+                        <h2>${grupo}</h2>
+                    </div>
+                    ${listaHTML}
+                </div>
+            `;
         }
-
+        
         function renderCatequista(grupo) {
-            if (viewingChildId !== null) return renderVerNino(viewingChildId);
+            if (viewingChildId !== null) {
+                return renderVerNino(viewingChildId);
+            }
+            
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
-            let listaHTML = ninosDelGrupo.length === 0 ? '<p>No hay niños asignados.</p>' : ninosDelGrupo.map(c => {
-                let estaPresente = c.asistencia[fechaSeleccionada] === true;
-                return `<div class="list-item"><div class="kid-info clickable-row" style="padding: 5px;" onclick="verNino(${c.id})"><h3>${c.nombre} ${c.apellido}</h3></div><label class="switch"><input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})"><span class="slider"></span></label></div>`
-            }).join('');
-            return `${renderSundaySelector()}<div class="card"><h2>${grupo}</h2><div id="lista-ninos">${listaHTML}</div></div>`;
+            let listaHTML = ninosDelGrupo.length === 0 ?
+                '<p style="text-align:center; color:#666; margin-top:15px;">No hay niños asignados a este grupo aún.</p>' :
+                ninosDelGrupo.map(c => {
+                    let estaPresente = c.asistencia[fechaSeleccionada] === true;
+                    return `
+                    <div class="list-item">
+                        <div class="kid-info clickable-row" style="padding: 5px;" onclick="verNino(${c.id})">
+                            <h3>${c.nombre} ${c.apellido}</h3>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                `
+                }).join('');
+            
+            return `
+                ${renderSundaySelector()}
+                <div class="card">
+                    <h2>${grupo}</h2>
+                    
+                    <div id="lista-ninos">
+                        ${listaHTML}
+                    </div>
+                </div>
+            `;
         }
-
+        
         function renderVerNino(id) {
             const nino = childrenDB.find(c => c.id === id);
-            if(!nino) return '';
-            let editButtons = currentRole === 'coordinador' ? `<div style="margin-top: 20px; display: flex; gap: 10px;"><button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin-top:0; flex: 1;">🗑️ Eliminar</button><button class="btn-outline" onclick="iniciarEdicion()" style="margin-top:0; flex: 1;">✏️ Editar</button></div>` : '';
-            return `<div class="card"><div class="card-header"><button class="icon-btn" onclick="volverLista()">⬅️</button><h2>${nino.nombre} ${nino.apellido}</h2></div><div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div><div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div><div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div><div class="profile-data"><strong>Teléfono:</strong> ${nino.telefono}</div><div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>${editButtons}</div>`;
+            if (!nino) return '';
+            let edadExacta = calcularEdadExacta(nino.fechaNac);
+            
+            let editButtonsHtml = '';
+            if (currentRole === 'coordinador') {
+                editButtonsHtml = `
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin-top:0; flex: 1;">
+                          🗑️ Eliminar
+                        </button>
+                        <button class="btn-outline" onclick="iniciarEdicion()" style="margin-top:0; flex: 1;">
+                            ✏️ Editar
+                        </button>
+                    </div>`;
+            }
+            
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <button class="icon-btn" onclick="volverLista()">⬅️</button>
+                        <h2>${nino.nombre} ${nino.apellido}</h2>
+                    </div>
+                    <div class="profile-data"><strong>Edad:</strong> ${edadExacta} años</div>
+                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
+                    <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
+                    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
+                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
+                    <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
+                    ${editButtonsHtml}
+                </div>
+            `;
         }
-
+        
         function renderEditarNino(id) {
             const nino = childrenDB.find(c => c.id === id);
-            return `<div class="card"><div class="card-header"><button class="icon-btn" onclick="cancelarEdicion()">⬅️</button><h2>Editar Perfil</h2></div><form onsubmit="guardarEdicion(event, ${nino.id})"><div class="form-group"><label>Nombre</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div><div class="form-group"><label>Apellido</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div><button type="submit" class="btn-primary">Guardar Cambios</button></form></div>`;
+            if (!nino) return '';
+            
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <button class="icon-btn" onclick="cancelarEdicion()">⬅️</button>
+                        <h2>Editar Perfil</h2>
+                    </div>
+                    <form onsubmit="guardarEdicion(event, ${nino.id})">
+                        <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
+                        <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
+                        <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
+                        <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
+                        <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
+                        <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
+                        <div class="checkbox-group">
+                            <label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : ''}> Bautizado</label>
+                            <label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : ''}> Comunión</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Asignar a Grupo</label>
+                            <select id="edit-grupo" required>
+                                ${gruposList.map(g => `<option value="${g}" ${nino.grupo === g ? 'selected' : ''}>${g}</option>`).join('')}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">Guardar Cambios</button>
+                    </form>
+                </div>
+            `;
         }
-
-        function cambiarMes(delta) { displayMonth += delta; if (displayMonth > 11) { displayMonth = 0; displayYear++; } else if (displayMonth < 0) { displayMonth = 11; displayYear--; } render(); }
-        function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr; render(); }
-        function changeRole() { currentRole = document.getElementById('roleSelect').value; activeTab = 'resumen'; viewingGroup = null; viewingChildId = null; render(); }
-        function abrirInscripcion() { activeTab = 'inscripcion'; render(); }
-        function verGrupo(grupo) { viewingGroup = grupo; render(); }
-        function volverResumen() { activeTab = 'resumen'; viewingGroup = null; render(); }
-        function verNino(id) { viewingChildId = id; isEditingChild = false; render(); }
-        function volverLista() { viewingChildId = null; render(); }
-        function iniciarEdicion() { isEditingChild = true; render(); }
-        function cancelarEdicion() { isEditingChild = false; render(); }
-        function toggleAsistencia(id) { const nino = childrenDB.find(c => c.id === id); if(nino) { nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada]; guardarDatos(); render(); } }
-
+        
+        // --- NAVEGACIÓN Y EVENTOS ---
+        function cambiarMes(delta) {
+            displayMonth += delta;
+            if (displayMonth > 11) { displayMonth = 0;
+                displayYear++; }
+            else if (displayMonth < 0) { displayMonth = 11;
+                displayYear--; }
+            let d = new Date(displayYear, displayMonth, 1);
+            while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+            fechaSeleccionada = formatDateStr(d);
+            render();
+        }
+        
+        function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr;
+            render(); }
+        
+        function changeRole() {
+            currentRole = document.getElementById('roleSelect').value;
+            activeTab = 'resumen';
+            viewingGroup = null;
+            viewingChildId = null;
+            isEditingChild = false;
+            render();
+        }
+        
+        function abrirInscripcion() { activeTab = 'inscripcion';
+            render(); }
+        
+        function verGrupo(grupo) { viewingGroup = grupo;
+            render(); }
+        
+        function volverResumen() { activeTab = 'resumen';
+            viewingGroup = null;
+            render(); }
+        
+        function verNino(id) { viewingChildId = id;
+            isEditingChild = false;
+            render(); }
+        
+        function volverLista() { viewingChildId = null;
+            isEditingChild = false;
+            render(); }
+        
+        function iniciarEdicion() { isEditingChild = true;
+            render(); }
+        
+        function cancelarEdicion() { isEditingChild = false;
+            render(); }
+        
+        function toggleAsistencia(id) {
+            const nino = childrenDB.find(c => c.id === id);
+            if (nino) {
+                nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
+                guardarDatos();
+                render();
+            }
+        }
+        
+        // --- LÓGICA DE DATOS ---
         function registrarNino(e) {
             e.preventDefault();
-            const nuevoNino = { id: Date.now(), nombre: document.getElementById('reg-nombre').value, apellido: document.getElementById('reg-apellido').value, fechaNac: document.getElementById('reg-fecha').value, representante: document.getElementById('reg-repre').value, telefono: document.getElementById('reg-tlf').value, sector: document.getElementById('reg-sector').value, bautizado: document.getElementById('reg-bautizado').checked, comunion: document.getElementById('reg-comunion').checked, grupo: document.getElementById('reg-grupo').value, asistencia: {} };
-            childrenDB.push(nuevoNino); guardarDatos(); activeTab = 'resumen'; viewingGroup = nuevoNino.grupo; render();
+            const nuevoNino = {
+                id: Date.now(),
+                nombre: document.getElementById('reg-nombre').value,
+                apellido: document.getElementById('reg-apellido').value,
+                fechaNac: document.getElementById('reg-fecha').value,
+                representante: document.getElementById('reg-repre').value,
+                telefono: document.getElementById('reg-tlf').value,
+                sector: document.getElementById('reg-sector').value,
+                bautizado: document.getElementById('reg-bautizado').checked,
+                comunion: document.getElementById('reg-comunion').checked,
+                grupo: document.getElementById('reg-grupo').value,
+                asistencia: {}
+            };
+            childrenDB.push(nuevoNino);
+            guardarDatos();
+            alert(`¡Inscrito exitosamente en ${nuevoNino.grupo}!`);
+            activeTab = 'resumen';
+            viewingGroup = nuevoNino.grupo;
+            render();
         }
-
+        
         function guardarEdicion(e, id) {
             e.preventDefault();
             const nino = childrenDB.find(c => c.id === id);
-            if(nino) { nino.nombre = document.getElementById('edit-nombre').value; nino.apellido = document.getElementById('edit-apellido').value; guardarDatos(); isEditingChild = false; render(); }
+            if (nino) {
+                nino.nombre = document.getElementById('edit-nombre').value;
+                nino.apellido = document.getElementById('edit-apellido').value;
+                nino.fechaNac = document.getElementById('edit-fecha').value;
+                nino.representante = document.getElementById('edit-repre').value;
+                nino.telefono = document.getElementById('edit-tlf').value;
+                nino.sector = document.getElementById('edit-sector').value;
+                nino.bautizado = document.getElementById('edit-bautizado').checked;
+                nino.comunion = document.getElementById('edit-comunion').checked;
+                nino.grupo = document.getElementById('edit-grupo').value;
+                guardarDatos();
+                alert('¡Datos actualizados correctamente!');
+                isEditingChild = false;
+                render();
+            }
         }
-
-        function eliminarNino(id) { if (confirm('¿Eliminar registro?')) { childrenDB = childrenDB.filter(c => c.id !== id); guardarDatos(); volverLista(); } }
-
-        // Iniciar la verificación al cargar
-        verificarAcceso();
+        
+        function eliminarNino(id) {
+            const nino = childrenDB.find(c => c.id === id);
+            if (!nino) return;
+            const confirmar = confirm(`¿Estás seguro de que deseas eliminar a ${nino.nombre} ${nino.apellido}?`);
+            if (confirmar) {
+                childrenDB = childrenDB.filter(c => c.id !== id);
+                guardarDatos();
+                alert('Registro eliminado.');
+                volverLista();
+            } else {
+                // Al cancelar, volvemos a renderizar para que el botón pierda el estado "active" o "hover" visual
+                render();
+            }
+        }
+        
+        render();
     </script>
 </body>
+
 </html>
