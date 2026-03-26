@@ -57,6 +57,7 @@
         .header-title h1 {
             font-size: 22px;
             margin-bottom: 2px;
+            letter-spacing: 1px;
         }
         
         /* Botón Inscribir (Encabezado) */
@@ -491,7 +492,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia<br>Nuestra Señora de Coromoto</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
         </div>
         <div id="header-action">
         </div>
@@ -642,30 +643,41 @@
             const headerAction = document.getElementById('header-action');
             app.innerHTML = '';
             
-            // --- NUEVA LÓGICA INTELIGENTE DEL BOTÓN DEL HEADER ---
+            // --- DEFINICIÓN DE LOS ICONOS SVG ---
+            // Icono de 'Volver' con la flecha desplazada a la izquierda (ya no parece reloj)
+            const iconVolver = `
+                <svg width="24" height="24" viewBox="0 0 100 100" style="display: block;">
+                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
+                  <path d="M 55 30 L 30 50 L 55 70" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+            
+            // Icono de 'Agregar'
+            const iconAgregar = `
+                <svg width="24" height="24" viewBox="0 0 100 100" style="display: block;">
+                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
+                  <path d="M 50 30 L 50 70 M 30 50 L 70 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
+                </svg>
+            `;
+            
+            // --- LÓGICA INTELIGENTE DEL BOTÓN DEL HEADER ---
             if (activeTab === 'inscripcion') {
-                // Volver de Inscripción a Resumen
-                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">⬅️</button>`;
+                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
             }
             else if (viewingChildId !== null) {
                 if (isEditingChild) {
-                    // Volver de Editar a Ver Perfil
-                    headerAction.innerHTML = `<button class="add-btn" onclick="cancelarEdicion()" title="Volver">⬅️</button>`;
+                    headerAction.innerHTML = `<button class="add-btn" onclick="cancelarEdicion()" title="Volver">${iconVolver}</button>`;
                 } else {
-                    // Volver de Ver Perfil a la Lista
-                    headerAction.innerHTML = `<button class="add-btn" onclick="volverLista()" title="Volver">⬅️</button>`;
+                    headerAction.innerHTML = `<button class="add-btn" onclick="volverLista()" title="Volver">${iconVolver}</button>`;
                 }
             }
             else if (currentRole === 'coordinador' && viewingGroup !== null) {
-                // Volver de un Grupo al Resumen (Solo Coordinador)
-                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">⬅️</button>`;
+                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
             }
             else if (currentRole === 'coordinador' && activeTab === 'resumen' && viewingGroup === null) {
-                // Botón de Agregar Niño (Pantalla principal Coordinador)
-                headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()" title="Inscribir Nuevo Niño">➕</button>`;
+                headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()" title="Inscribir Nuevo Niño">${iconAgregar}</button>`;
             }
             else {
-                // Pantalla principal del Catequista (No necesita botón aquí)
                 headerAction.innerHTML = '';
             }
             
@@ -905,37 +917,55 @@
             if (!nino) return '';
             let edadExacta = calcularEdadExacta(nino.fechaNac);
             
+            // --- DEFINICIÓN DE LOS NUEVOS ICONOS ---
+            // Icono de Eliminar (Basurero minimalista)
+            const iconEliminar = `
+                <svg width="20" height="20" viewBox="0 0 100 100" style="display: block; flex-shrink: 0;">
+                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
+                  <path d="M 32 35 L 68 35 M 45 35 L 45 28 L 55 28 L 55 35 M 38 35 L 40 68 L 60 68 L 62 35 M 50 45 L 50 58" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+            
+            // Icono de Editar (Lápiz diagonal)
+            const iconEditar = `
+                <svg width="20" height="20" viewBox="0 0 100 100" style="display: block; flex-shrink: 0;">
+                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
+                  <path d="M 30 70 L 50 60 L 70 40 L 60 30 L 40 50 Z M 40 50 L 50 60 M 55 35 L 65 45" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
+            
             let editButtonsHtml = '';
             if (currentRole === 'coordinador') {
+                // Notarás que agregué "display: flex; align-items: center; justify-content: center; gap: 8px;" a los estilos de los botones
                 editButtonsHtml = `
-<div style="margin-top: 20px; display: flex; gap: 10px;">
-    <button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin-top:0; flex: 1;">
-        🗑️ Eliminar
-    </button>
-    <button class="btn-outline" onclick="iniciarEdicion()" style="margin-top:0; flex: 1;">
-        ✏️ Editar
-    </button>
-</div>`;
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin-top:0; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                          ${iconEliminar} Eliminar
+                        </button>
+                        <button class="btn-outline" onclick="iniciarEdicion()" style="margin-top:0; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                          ${iconEditar} Editar
+                        </button>
+                    </div>`;
             }
             
             return `
-<div class="card">
-    <div class="card-header">
-        <h2 style="margin: 0; padding: 0; border: none;">${nino.nombre} ${nino.apellido}</h2>
-    </div>
-    <div class="profile-data"><strong>Edad:</strong> ${edadExacta} años</div>
-    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
-    <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
-    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
-    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
-    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
-    <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
-    <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
-    ${editButtonsHtml}
-</div>
-`;
+                <div class="card">
+                    <div class="card-header">
+                        <h2 style="margin: 0; padding: 0; border: none;">${nino.nombre} ${nino.apellido}</h2>
+                    </div>
+                    <div class="profile-data"><strong>Edad:</strong> ${edadExacta} años</div>
+                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
+                    <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
+                    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
+                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
+                    <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
+                    ${editButtonsHtml}
+                </div>
+            `;
         }
         
         function renderEditarNino(id) {
@@ -943,34 +973,34 @@
             if (!nino) return '';
             
             return `
-<div class="card">
-    <div class="card-header">
-        <h2 style="margin: 0; padding: 0; border: none;">Editar Perfil</h2>
-    </div>
-    <form onsubmit="guardarEdicion(event, ${nino.id})">
-        <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
-        <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
-        <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
-        <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
-        <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
-        <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
-        <div class="checkbox-group">
-            <label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : '' }> Bautizado</label>
-            <label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : '' }> Comunión</label>
-        </div>
-        <div class="form-group">
-            <label>Asignar a Grupo</label>
-            <select id="edit-grupo" required>
-                ${gruposList.map(g => `<option value="${g}" ${nino.grupo===g ? 'selected' : '' }>${g}</option>`).join('')}
-            </select>
-        </div>
-        <button type="submit" class="btn-primary">Guardar Cambios</button>
-    </form>
-</div>
-`;
+            <div class="card">
+                <div class="card-header">
+                    <h2 style="margin: 0; padding: 0; border: none;">Editar Perfil</h2>
+                </div>
+                <form onsubmit="guardarEdicion(event, ${nino.id})">
+                    <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
+                    <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
+                    <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
+                    <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
+                    <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : '' }> Bautizado</label>
+                        <label><inp=ut type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : '' }> Comunión</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a Grupo</label>
+                        <select id="edit-grupo" required>
+                            ${gruposList.map(g => `<option value="${g}" ${nino.grupo===g ? 'selected' : '' }>${g}</option>`).join('')}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </form>
+            </div>
+            `;
         }
         
-        // --- NAVEGACIÓN Y EVENTOS ---
+        //--- NAVEGACIÓN Y EVENTOS ---
         function cambiarMes(delta) {
             displayMonth += delta;
             if (displayMonth > 11) {
