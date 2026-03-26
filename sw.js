@@ -1,4 +1,4 @@
-const CACHE_NAME = 'catequesis-cache-v0.10';
+const CACHE_NAME = 'catequesis-cache-v0.11';
 const urlsToCache =[
   './',
   './index.html',
