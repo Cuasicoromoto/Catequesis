@@ -491,7 +491,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia<br>Nuestra Señora de Coromoto</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia z<br>Nuestra Señora de Coromoto</p>
         </div>
         <div id="header-action">
         </div>
@@ -602,6 +602,38 @@
                 if (nino.asistencia[fecha] === true) asistencias++;
             });
             return Math.round((asistencias / domingosDelMes.length) * 100);
+        }
+        
+        // --- ORDENAMIENTO DE LISTAS ---
+        let currentSortOrder = 'alfabetico'; // Por defecto, orden alfabético
+        
+        function cambiarOrdenamiento(orden) {
+            currentSortOrder = orden;
+            render();
+        }
+        
+        function ordenarListaNinos(ninos, domingosMes) {
+            let ninosOrdenados = [...ninos]; // Clonamos la lista para no alterar la original
+            
+            ninosOrdenados.sort((a, b) => {
+                let nombreA = (a.nombre + ' ' + a.apellido).toLowerCase();
+                let nombreB = (b.nombre + ' ' + b.apellido).toLowerCase();
+                
+                if (currentSortOrder === 'alfabetico') {
+                    return nombreA.localeCompare(nombreB);
+                } else if (currentSortOrder === 'asistencia') {
+                    let asisA = calcularAsistenciaMensualNino(a, domingosMes);
+                    let asisB = calcularAsistenciaMensualNino(b, domingosMes);
+                    
+                    // Si tienen la misma asistencia, los desempata alfabéticamente
+                    if (asisA === asisB) {
+                        return nombreA.localeCompare(nombreB);
+                    }
+                    return asisB - asisA; // De mayor a menor asistencia
+                }
+            });
+            
+            return ninosOrdenados;
         }
         
         // --- FUNCIONES DE RENDERIZADO PRINCIPAL ---
@@ -738,20 +770,24 @@
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
             
-            let listaHTML = ninosGrupo.length === 0 ?
+            // Aquí aplicamos el ordenamiento antes de mostrar la lista
+            const ninosOrdenados = ordenarListaNinos(ninosGrupo, domingosMes);
+            
+            let listaHTML = ninosOrdenados.length === 0 ?
                 '<p style="color:#666; text-align:center; margin-top:15px;">No hay niños inscritos en este grupo.</p>' :
-                ninosGrupo.map(n => {
+                ninosOrdenados.map(n => {
                     let estaPresente = n.asistencia[fechaSeleccionada] === true;
                     let badge = estaPresente ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
                     
                     let porcentaje = calcularAsistenciaMensualNino(n, domingosMes);
                     let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
                     
+                    // NOTA: Se eliminó el font-weight: bold de la línea de porcentaje
                     return `
                         <div class="list-item clickable-row" onclick="verNino(${n.id})">
                             <div class="kid-info">
-                                <h3>${n.nombre} ${n.apellido}</h3>
-                                <p style="color: ${colorPorc}; font-weight: bold; margin-top: 2px;">Asistencia del mes: ${porcentaje}%</p>
+                                <h3 style="font-weight: 600;">${n.nombre} ${n.apellido}</h3>
+                                <p style="color: ${colorPorc}; margin-top: 2px; font-size: 13px;">Asistencia del mes: ${porcentaje}%</p>
                             </div>
                             <div>${badge}</div>
                         </div>
@@ -765,6 +801,14 @@
                         <button class="icon-btn" onclick="volverResumen()">⬅️</button>
                         <h2>${grupo}</h2>
                     </div>
+                    
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+                        <select onchange="cambiarOrdenamiento(this.value)" style="padding: 6px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; background: var(--secondary); color: var(--text); outline: none;">
+                            <option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>🔤 Orden Alfabético</option>
+                            <option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>📊 Por Asistencia</option>
+                        </select>
+                    </div>
+
                     ${listaHTML}
                 </div>
             `;
@@ -774,36 +818,46 @@
             if (viewingChildId !== null) {
                 return renderVerNino(viewingChildId);
             }
-            
+
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
-            
-            let listaHTML = ninosDelGrupo.length === 0 ?
-                '<p style="text-align:center; color:#666; margin-top:15px;">No hay niños asignados a este grupo aún.</p>' :
-                ninosDelGrupo.map(c => {
+
+            // Aquí aplicamos el ordenamiento
+            const ninosOrdenados = ordenarListaNinos(ninosDelGrupo, domingosMes);
+
+            let listaHTML = ninosOrdenados.length === 0 
+                ? '<p style="text-align:center; color:#666; margin-top:15px;">No hay niños asignados a este grupo aún.</p>'
+                : ninosOrdenados.map(c => {
                     let estaPresente = c.asistencia[fechaSeleccionada] === true;
                     
                     let porcentaje = calcularAsistenciaMensualNino(c, domingosMes);
                     let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
-                    
+
+                    // NOTA: Se eliminó el font-weight: bold de la línea de porcentaje
                     return `
                     <div class="list-item">
                         <div class="kid-info clickable-row" style="padding: 5px;" onclick="verNino(${c.id})">
-                            <h3>${c.nombre} ${c.apellido}</h3>
-                            <p style="color: ${colorPorc}; font-weight: bold; margin-top: 2px;">Asistencia del mes: ${porcentaje}%</p>
+                            <h3 style="font-weight: 600;">${c.nombre} ${c.apellido}</h3>
+                            <p style="color: ${colorPorc}; margin-top: 2px; font-size: 13px;">Asistencia del mes: ${porcentaje}%</p>
                         </div>
                         <label class="switch">
                             <input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})">
                             <span class="slider"></span>
                         </label>
                     </div>
-                `
-                }).join('');
-            
+                `}).join('');
+
             return `
                 ${renderSundaySelector()}
                 <div class="card">
-                    <h2>${grupo}</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--secondary); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h2 style="margin: 0; border: none; padding: 0;">${grupo}</h2>
+                        
+                        <select onchange="cambiarOrdenamiento(this.value)" style="padding: 6px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; background: var(--secondary); color: var(--text); outline: none;">
+                            <option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>🔤 A - Z</option>
+                            <option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>📊 Asistencia</option>
+                        </select>
+                    </div>
                     
                     <div id="lista-ninos">
                         ${listaHTML}
