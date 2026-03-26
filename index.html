@@ -491,7 +491,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia x<br>Nuestra Señora de Coromoto</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia y<br>Nuestra Señora de Coromoto</p>
         </div>
         <div id="header-action">
         </div>
@@ -550,16 +550,44 @@
         let displayMonth = lastSun.getMonth();
         let fechaSeleccionada = formatDateStr(lastSun);
         
-        // NUEVO: Leer qué rol viene en el link (URL)
-        const urlParams = new URLSearchParams(window.location.search);
-        const paramRol = urlParams.get('rol');
+        let currentRole = 'coordinador'; // Por defecto
         
-        let currentRole = 'coordinador'; // Por defecto es coordinador
+        // NUEVO: Función a prueba de fallos para leer el enlace
+        function obtenerRolDeURL() {
+            // 1. Intentar buscar como parámetro tradicional (?rol=Grupo 1)
+            const urlParams = new URLSearchParams(window.location.search);
+            let rol = urlParams.get('rol');
+            
+            // 2. Si no funciona, intentar buscarlo como ancla (#rol=Grupo 1) - Muy útil para probar en PC
+            if (!rol && window.location.hash.includes('rol=')) {
+                rol = decodeURIComponent(window.location.hash.split('rol=')[1]);
+            }
+            return rol;
+        }
+        
+        const paramRol = obtenerRolDeURL();
         
         if (paramRol) {
-            currentRole = paramRol;
-            // Si entra con un link de grupo, ocultamos el selector para que no hagan trampa
-            document.querySelector('.role-selector').style.display = 'none';
+            // Limpiamos espacios extra al inicio o final
+            const rolLimpio = paramRol.trim().toLowerCase();
+            
+            // Lista de grupos válidos para comparar
+            const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+            
+            // Buscamos el grupo ignorando mayúsculas y minúsculas
+            const grupoEncontrado = gruposValidos.find(g => g.toLowerCase() === rolLimpio);
+            
+            if (grupoEncontrado) {
+                currentRole = grupoEncontrado;
+                
+                // Actualizamos el selector oculto para que todo coincida
+                document.getElementById('roleSelect').value = grupoEncontrado;
+                
+                // Ocultamos la barra para que el catequista no pueda cambiar
+                document.querySelector('.role-selector').style.display = 'none';
+            } else {
+                alert("⚠️ El enlace indica un grupo inválido: " + paramRol);
+            }
         }
         
         let activeTab = 'resumen';
@@ -850,18 +878,24 @@
         // --- NAVEGACIÓN Y EVENTOS ---
         function cambiarMes(delta) {
             displayMonth += delta;
-            if (displayMonth > 11) { displayMonth = 0;
-                displayYear++; }
-            else if (displayMonth < 0) { displayMonth = 11;
-                displayYear--; }
+            if (displayMonth > 11) {
+                displayMonth = 0;
+                displayYear++;
+            }
+            else if (displayMonth < 0) {
+                displayMonth = 11;
+                displayYear--;
+            }
             let d = new Date(displayYear, displayMonth, 1);
             while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
             fechaSeleccionada = formatDateStr(d);
             render();
         }
         
-        function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr;
-            render(); }
+        function seleccionarDomingo(dateStr) {
+            fechaSeleccionada = dateStr;
+            render();
+        }
         
         function changeRole() {
             currentRole = document.getElementById('roleSelect').value;
@@ -872,29 +906,43 @@
             render();
         }
         
-        function abrirInscripcion() { activeTab = 'inscripcion';
-            render(); }
+        function abrirInscripcion() {
+            activeTab = 'inscripcion';
+            render();
+        }
         
-        function verGrupo(grupo) { viewingGroup = grupo;
-            render(); }
+        function verGrupo(grupo) {
+            viewingGroup = grupo;
+            render();
+        }
         
-        function volverResumen() { activeTab = 'resumen';
+        function volverResumen() {
+            activeTab = 'resumen';
             viewingGroup = null;
-            render(); }
+            render();
+        }
         
-        function verNino(id) { viewingChildId = id;
+        function verNino(id) {
+            viewingChildId = id;
             isEditingChild = false;
-            render(); }
+            render();
+        }
         
-        function volverLista() { viewingChildId = null;
+        function volverLista() {
+            viewingChildId = null;
             isEditingChild = false;
-            render(); }
+            render();
+        }
         
-        function iniciarEdicion() { isEditingChild = true;
-            render(); }
+        function iniciarEdicion() {
+            isEditingChild = true;
+            render();
+        }
         
-        function cancelarEdicion() { isEditingChild = false;
-            render(); }
+        function cancelarEdicion() {
+            isEditingChild = false;
+            render();
+        }
         
         function toggleAsistencia(id) {
             const nino = childrenDB.find(c => c.id === id);
