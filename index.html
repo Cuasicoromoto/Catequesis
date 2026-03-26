@@ -491,23 +491,11 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia y<br>Nuestra Señora de Coromoto</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia<br>Nuestra Señora de Coromoto</p>
         </div>
         <div id="header-action">
         </div>
     </header>
-    
-    <div class="role-selector">
-        <select id="roleSelect" onchange="changeRole()">
-            <option value="coordinador">Vista: Coordinador General</option>
-            <option value="Grupo 1">Vista: Catequista - Grupo 1</option>
-            <option value="Grupo 2">Vista: Catequista - Grupo 2</option>
-            <option value="Grupo 3">Vista: Catequista - Grupo 3</option>
-            <option value="Grupo 4">Vista: Catequista - Grupo 4</option>
-            <option value="Grupo 5">Vista: Catequista - Grupo 5</option>
-            <option value="Grupo 6">Vista: Catequista - Grupo 6</option>
-        </select>
-    </div>
     
     <main id="app"></main>
     
@@ -552,13 +540,9 @@
         
         let currentRole = 'coordinador'; // Por defecto
         
-        // NUEVO: Función a prueba de fallos para leer el enlace
         function obtenerRolDeURL() {
-            // 1. Intentar buscar como parámetro tradicional (?rol=Grupo 1)
             const urlParams = new URLSearchParams(window.location.search);
             let rol = urlParams.get('rol');
-            
-            // 2. Si no funciona, intentar buscarlo como ancla (#rol=Grupo 1) - Muy útil para probar en PC
             if (!rol && window.location.hash.includes('rol=')) {
                 rol = decodeURIComponent(window.location.hash.split('rol=')[1]);
             }
@@ -568,23 +552,12 @@
         const paramRol = obtenerRolDeURL();
         
         if (paramRol) {
-            // Limpiamos espacios extra al inicio o final
             const rolLimpio = paramRol.trim().toLowerCase();
-            
-            // Lista de grupos válidos para comparar
-            const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
-            
-            // Buscamos el grupo ignorando mayúsculas y minúsculas
+            const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6', 'coordinador'];
             const grupoEncontrado = gruposValidos.find(g => g.toLowerCase() === rolLimpio);
             
             if (grupoEncontrado) {
                 currentRole = grupoEncontrado;
-                
-                // Actualizamos el selector oculto para que todo coincida
-                document.getElementById('roleSelect').value = grupoEncontrado;
-                
-                // Ocultamos la barra para que el catequista no pueda cambiar
-                document.querySelector('.role-selector').style.display = 'none';
             } else {
                 alert("⚠️ El enlace indica un grupo inválido: " + paramRol);
             }
@@ -608,6 +581,28 @@
         }
         
         const gruposList = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+        
+        // --- CÁLCULO DE ASISTENCIA MENSUAL ---
+        function getDomingosDelMesActual(year, month) {
+            let sundays = [];
+            let d = new Date(year, month, 1);
+            while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+            
+            while (d.getMonth() === month) {
+                sundays.push(formatDateStr(new Date(d)));
+                d.setDate(d.getDate() + 7);
+            }
+            return sundays;
+        }
+        
+        function calcularAsistenciaMensualNino(nino, domingosDelMes) {
+            if (domingosDelMes.length === 0) return 0;
+            let asistencias = 0;
+            domingosDelMes.forEach(fecha => {
+                if (nino.asistencia[fecha] === true) asistencias++;
+            });
+            return Math.round((asistencias / domingosDelMes.length) * 100);
+        }
         
         // --- FUNCIONES DE RENDERIZADO PRINCIPAL ---
         function render() {
@@ -741,15 +736,22 @@
         
         function renderListaGrupoCoordinador(grupo) {
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
+            const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
+            
             let listaHTML = ninosGrupo.length === 0 ?
                 '<p style="color:#666; text-align:center; margin-top:15px;">No hay niños inscritos en este grupo.</p>' :
                 ninosGrupo.map(n => {
                     let estaPresente = n.asistencia[fechaSeleccionada] === true;
                     let badge = estaPresente ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
+                    
+                    let porcentaje = calcularAsistenciaMensualNino(n, domingosMes);
+                    let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
+                    
                     return `
                         <div class="list-item clickable-row" onclick="verNino(${n.id})">
                             <div class="kid-info">
                                 <h3>${n.nombre} ${n.apellido}</h3>
+                                <p style="color: ${colorPorc}; font-weight: bold; margin-top: 2px;">Asistencia del mes: ${porcentaje}%</p>
                             </div>
                             <div>${badge}</div>
                         </div>
@@ -774,14 +776,21 @@
             }
             
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
+            const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
+            
             let listaHTML = ninosDelGrupo.length === 0 ?
                 '<p style="text-align:center; color:#666; margin-top:15px;">No hay niños asignados a este grupo aún.</p>' :
                 ninosDelGrupo.map(c => {
                     let estaPresente = c.asistencia[fechaSeleccionada] === true;
+                    
+                    let porcentaje = calcularAsistenciaMensualNino(c, domingosMes);
+                    let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
+                    
                     return `
                     <div class="list-item">
                         <div class="kid-info clickable-row" style="padding: 5px;" onclick="verNino(${c.id})">
                             <h3>${c.nombre} ${c.apellido}</h3>
+                            <p style="color: ${colorPorc}; font-weight: bold; margin-top: 2px;">Asistencia del mes: ${porcentaje}%</p>
                         </div>
                         <label class="switch">
                             <input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})">
@@ -894,15 +903,6 @@
         
         function seleccionarDomingo(dateStr) {
             fechaSeleccionada = dateStr;
-            render();
-        }
-        
-        function changeRole() {
-            currentRole = document.getElementById('roleSelect').value;
-            activeTab = 'resumen';
-            viewingGroup = null;
-            viewingChildId = null;
-            isEditingChild = false;
             render();
         }
         
