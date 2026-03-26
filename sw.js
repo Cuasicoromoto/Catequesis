@@ -1,5 +1,5 @@
-const CACHE_NAME = 'catequesis-cache-v0.2';
-const assets = ['./gempro.html', './manifest.json'];
+const CACHE_NAME = 'catequesis-cache-v0.3';
+const assets = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(assets)));
