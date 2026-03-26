@@ -562,7 +562,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS. de Coromoto<br>Capilla San José</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José x</p>
         </div>
         <div id="header-action">
         </div>
@@ -623,6 +623,7 @@
         let fechaSeleccionada = formatDateStr(lastSun);
         
         let currentRole = 'coordinador'; // Por defecto
+        const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6', 'coordinador'];
         
         function obtenerRolDeURL() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -636,14 +637,22 @@
         const paramRol = obtenerRolDeURL();
         
         if (paramRol) {
+            // 1. Si hay un rol en el enlace de WhatsApp/Navegador, lo validamos
             const rolLimpio = paramRol.trim().toLowerCase();
-            const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6', 'coordinador'];
             const grupoEncontrado = gruposValidos.find(g => g.toLowerCase() === rolLimpio);
             
             if (grupoEncontrado) {
                 currentRole = grupoEncontrado;
+                // ¡LA MAGIA!: Guardamos este rol en la memoria del teléfono
+                localStorage.setItem('catequesis_rol_guardado', currentRole);
             } else {
                 alert("⚠️ El enlace indica un grupo inválido: " + paramRol);
+            }
+        } else {
+            // 2. Si NO hay rol en la URL (ej. al abrir la App Instalada), buscamos en memoria
+            const rolGuardado = localStorage.getItem('catequesis_rol_guardado');
+            if (rolGuardado && gruposValidos.includes(rolGuardado)) {
+                currentRole = rolGuardado;
             }
         }
         
