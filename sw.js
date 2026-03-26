@@ -1,30 +1,17 @@
-// Service Worker Básico para PWA
-const CACHE_NAME = 'pastoral-cache-v0.2';
-const urlsToCache =[
-  './',
-  './index.html',
+const CACHE_NAME = 'catequesis-v0.1';
+const ASSETS = [
+  './gempro.html',
   './manifest.json'
 ];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
   );
 });
 
-self.addEventListener('fetch', event => {
-  // Ignoramos las llamadas a Google Sheets en el caché
-  if (event.request.url.includes('script.google.com')) {
-    return;
-  }
-  
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        return response || fetch(event.request);
-      })
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
 });
