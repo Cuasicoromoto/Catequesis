@@ -554,17 +554,54 @@
             /* Sobrescribe el margen de tus botones base */
             padding: 10px;
         }
+
+        /* Toast de Sincronización */
+        #sync-toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
-    
+    <!-- Toast de Sincronización -->
+    <div id="sync-toast">
+        <div class="spinner"></div>
+        <span id="sync-msg">Sincronizando...</span>
+    </div>
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
             <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José x</p>
         </div>
-        <div id="header-action">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="add-btn" onclick="sincronizarConNube()" title="Actualizar Datos" style="background: transparent; box-shadow: none; font-size: 20px;">🔄</button>
+            <div id="header-action"></div>
+        </div>
         </div>
     </header>
     
@@ -661,13 +698,49 @@
         let viewingChildId = null;
         let isEditingChild = false;
         
-        // --- BASE DE DATOS CON LOCALSTORAGE ---
-        let childrenDB = JSON.parse(localStorage.getItem('catequesis_db')) || [
-            { id: 1, nombre: 'Juan', apellido: 'Pérez', fechaNac: '2014-05-12', representante: 'Ana Pérez', telefono: '0414-1234567', sector: 'Centro', bautizado: true, comunion: false, grupo: 'Grupo 1', asistencia: {} },
-            { id: 2, nombre: 'María', apellido: 'Gómez', fechaNac: '2013-08-22', representante: 'Carlos Gómez', telefono: '0412-9876543', sector: 'La Paz', bautizado: true, comunion: true, grupo: 'Grupo 1', asistencia: {} },
-            { id: 3, nombre: 'Luis', apellido: 'Rodríguez', fechaNac: '2015-01-10', representante: 'Sofia Rodríguez', telefono: '0416-5554433', sector: 'El Valle', bautizado: false, comunion: false, grupo: 'Grupo 2', asistencia: {} },
-            { id: 4, nombre: 'Camila', apellido: 'Díaz', fechaNac: '2012-11-30', representante: 'Pedro Díaz', telefono: '0424-1112233', sector: 'Las Rosas', bautizado: true, comunion: false, grupo: 'Grupo 6', asistencia: {} }
-        ];
+        // --- CONEXIÓN CON GOOGLE SHEETS ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbzBUICHriHtaV9WnHj-YaTUuglZbkjbeDsvx2-Ar3zRby7YqiQq5KpO4NzL4lRy05Td/exec";
+        
+        // Empezamos con la memoria caché (así la app abre rápido aunque no haya internet)
+        let childrenDB = JSON.parse(localStorage.getItem('catequesis_db')) ||[];
+
+        function guardarDatosLocal() {
+            localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
+        }
+
+        // --- FUNCIONES DE SINCRONIZACIÓN ---
+        function showSync(msg = "Guardando en la nube...") {
+            document.getElementById('sync-msg').innerText = msg;
+            document.getElementById('sync-toast').style.display = 'flex';
+        }
+
+        function hideSync() {
+            document.getElementById('sync-toast').style.display = 'none';
+        }
+
+        // Esta función descarga los datos de Google Sheets al abrir la app
+        async function sincronizarConNube() {
+            showSync("Actualizando datos...");
+            try {
+                let response = await fetch(API_URL);
+                let datosNube = await response.json();
+                
+                // Si Sheets devuelve algo válido, actualizamos la memoria del teléfono
+                if (datosNube && Array.isArray(datosNube)) {
+                    childrenDB = datosNube;
+                    guardarDatosLocal();
+                    render(); // Refrescar la pantalla
+                }
+            } catch (error) {
+                console.log("No hay conexión a internet. Usando datos guardados en el celular.");
+            }
+            hideSync();
+        }
+
+        // Llamamos a la sincronización en segundo plano al abrir la app
+        window.addEventListener('load', sincronizarConNube);
+
+        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
         
         // --- LÓGICA DE INSTALACIÓN PWA ---
         let deferredPrompt;
@@ -1203,17 +1276,36 @@
             render();
         }
         
-        function toggleAsistencia(id) {
+        // --- ACCIONES OPTIMISTAS (Actualizan la pantalla primero, luego envían a la nube) ---
+        
+        async function toggleAsistencia(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (nino) {
+                // 1. Actualizar pantalla al instante
                 nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
-                guardarDatos();
+                guardarDatosLocal();
                 render();
+
+                // 2. Enviar a Google Sheets en segundo plano
+                showSync("Guardando asistencia...");
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'toggle_asistencia',
+                            id: id,
+                            fecha: fechaSeleccionada,
+                            presente: nino.asistencia[fechaSeleccionada]
+                        })
+                    });
+                } catch(err) {
+                    console.error("Modo Offline: La asistencia se enviará después.");
+                }
+                hideSync();
             }
         }
-        
-        // --- LÓGICA DE DATOS ---
-        function registrarNino(e) {
+
+        async function registrarNino(e) {
             e.preventDefault();
             const nuevoNino = {
                 id: Date.now(),
@@ -1228,15 +1320,29 @@
                 grupo: document.getElementById('reg-grupo').value,
                 asistencia: {}
             };
+            
+            // 1. Actualizar pantalla al instante
             childrenDB.push(nuevoNino);
-            guardarDatos();
-            alert(`¡Inscrito exitosamente en ${nuevoNino.grupo}!`);
+            guardarDatosLocal();
+            alert(`¡${nuevoNino.nombre} inscrito exitosamente en ${nuevoNino.grupo}!`);
             activeTab = 'resumen';
             viewingGroup = nuevoNino.grupo;
             render();
+
+            // 2. Guardar en Google Sheets
+            showSync("Registrando en servidor...");
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({action: 'add_nino', nino: nuevoNino})
+                });
+            } catch(err) {
+                console.error("Guardado localmente. Falla de conexión a internet.");
+            }
+            hideSync();
         }
-        
-        function guardarEdicion(e, id) {
+
+        async function guardarEdicion(e, id) {
             e.preventDefault();
             const nino = childrenDB.find(c => c.id === id);
             if (nino) {
@@ -1249,29 +1355,52 @@
                 nino.bautizado = document.getElementById('edit-bautizado').checked;
                 nino.comunion = document.getElementById('edit-comunion').checked;
                 nino.grupo = document.getElementById('edit-grupo').value;
-                guardarDatos();
+                
+                // 1. Pantalla
+                guardarDatosLocal();
                 alert('¡Datos actualizados correctamente!');
                 isEditingChild = false;
                 render();
+
+                // 2. Nube
+                showSync("Actualizando nube...");
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({action: 'edit_nino', nino: nino})
+                    });
+                } catch(err) {
+                    console.error("Editado localmente.");
+                }
+                hideSync();
             }
         }
-        
-        function eliminarNino(id) {
+
+        async function eliminarNino(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (!nino) return;
             const confirmar = confirm(`¿Estás seguro de que deseas eliminar a ${nino.nombre} ${nino.apellido}?`);
             if (confirmar) {
+                // 1. Pantalla
                 childrenDB = childrenDB.filter(c => c.id !== id);
-                guardarDatos();
-                alert('Registro eliminado.');
+                guardarDatosLocal();
                 volverLista();
+
+                // 2. Nube
+                showSync("Borrando de la base de datos...");
+                try {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({action: 'delete_nino', id: id})
+                    });
+                } catch(err) {
+                    console.error("Borrado localmente.");
+                }
+                hideSync();
             } else {
-                // Al cancelar, volvemos a renderizar para que el botón pierda el estado "active" o "hover" visual
                 render();
             }
         }
-        
-        render();
     </script>
     <script>
         // Registrar Service Worker para PWA
