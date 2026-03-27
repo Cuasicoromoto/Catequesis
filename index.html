@@ -1118,7 +1118,7 @@
             viewingGroup = nuevoNino.grupo;
             render();
 
-            showSync("Subiendo a la nube...");
+            showSync("Sincronizando...");
             try {
                 await enviarGoogle({action: 'add_nino', nino: nuevoNino});
             } finally {
