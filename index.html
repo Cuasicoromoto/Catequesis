@@ -923,54 +923,96 @@
         function cancelarEdicion() { isEditingChild = false; render(); }
 
         // --- ACCIONES CON LA NUBE ---
+        // --- ACCIONES CON LA NUBE ---
+        
+        // 1. Esta función debe tener 'no-cors' para que Google no la bloquee
+        async function enviarGoogle(datos) {
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // <--- ESTO ES VITAL
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(datos)
+                });
+            } catch(err) {
+                console.warn("Error de red: se guardará al reconectar.");
+            }
+        }
+
+        // 2. toggleAsistencia con protección contra "Cargando..." infinito
         async function toggleAsistencia(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (nino) {
                 nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
                 guardarDatosLocal();
                 render();
-                showSync("Guardando...");
                 
-                // Aseguramos que fechaSeleccionada sea un string limpio
-                await enviarGoogle({ 
-                    action: 'toggle_asistencia', 
-                    id: id, 
-                    fecha: String(fechaSeleccionada), // Forzamos string
-                    presente: nino.asistencia[fechaSeleccionada] 
-                });
-                hideSync();
+                showSync("Guardando...");
+                try {
+                    await enviarGoogle({ 
+                        action: 'toggle_asistencia', 
+                        id: id, 
+                        fecha: String(fechaSeleccionada), 
+                        presente: nino.asistencia[fechaSeleccionada] 
+                    });
+                } finally {
+                    // El 'finally' se ejecuta SIEMPRE, aunque haya error.
+                    // Así el cartel de "Cargando" desaparecerá pase lo que pase.
+                    hideSync(); 
+                }
             }
         }
 
+        // 3. registrarNino con protección
         async function registrarNino(e) {
             e.preventDefault();
             const nuevoNino = { id: Date.now(), nombre: document.getElementById('reg-nombre').value, apellido: document.getElementById('reg-apellido').value, fechaNac: document.getElementById('reg-fecha').value, representante: document.getElementById('reg-repre').value, telefono: document.getElementById('reg-tlf').value, sector: document.getElementById('reg-sector').value, bautizado: document.getElementById('reg-bautizado').checked, comunion: document.getElementById('reg-comunion').checked, grupo: document.getElementById('reg-grupo').value, asistencia: {} };
+            
             childrenDB.push(nuevoNino);
             guardarDatosLocal();
             alert(`¡${nuevoNino.nombre} inscrito!`);
             activeTab = 'resumen';
             viewingGroup = nuevoNino.grupo;
             render();
-            showSync("Subiendo a Google Sheets...");
-            try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'add_nino', nino: nuevoNino}) }); } catch(err) {}
-            hideSync();
-        }
 
-        async function guardarEdicion(e, id) {
-            e.preventDefault();
-            const nino = childrenDB.find(c => c.id === id);
-            if (nino) {
-                nino.nombre = document.getElementById('edit-nombre').value; nino.apellido = document.getElementById('edit-apellido').value; nino.fechaNac = document.getElementById('edit-fecha').value; nino.representante = document.getElementById('edit-repre').value; nino.telefono = document.getElementById('edit-tlf').value; nino.sector = document.getElementById('edit-sector').value; nino.bautizado = document.getElementById('edit-bautizado').checked; nino.comunion = document.getElementById('edit-comunion').checked; nino.grupo = document.getElementById('edit-grupo').value;
-                guardarDatosLocal();
-                alert('¡Actualizado!');
-                isEditingChild = false;
-                render();
-                showSync("Actualizando nube...");
-                try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'edit_nino', nino: nino}) }); } catch(err) {}
+            showSync("Subiendo a la nube...");
+            try {
+                await enviarGoogle({action: 'add_nino', nino: nuevoNino});
+            } finally {
                 hideSync();
             }
         }
 
+        // 4. guardarEdicion con protección
+        async function guardarEdicion(e, id) {
+            e.preventDefault();
+            const nino = childrenDB.find(c => c.id === id);
+            if (nino) {
+                nino.nombre = document.getElementById('edit-nombre').value; 
+                nino.apellido = document.getElementById('edit-apellido').value; 
+                nino.fechaNac = document.getElementById('edit-fecha').value; 
+                nino.representante = document.getElementById('edit-repre').value; 
+                nino.telefono = document.getElementById('edit-tlf').value; 
+                nino.sector = document.getElementById('edit-sector').value; 
+                nino.bautizado = document.getElementById('edit-bautizado').checked; 
+                nino.comunion = document.getElementById('edit-comunion').checked; 
+                nino.grupo = document.getElementById('edit-grupo').value;
+                
+                guardarDatosLocal();
+                alert('¡Actualizado!');
+                isEditingChild = false;
+                render();
+
+                showSync("Actualizando nube...");
+                try {
+                    await enviarGoogle({action: 'edit_nino', nino: nino});
+                } finally {
+                    hideSync();
+                }
+            }
+        }
+
+        // 5. eliminarNino con protección
         async function eliminarNino(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (!nino) return;
@@ -978,9 +1020,13 @@
                 childrenDB = childrenDB.filter(c => c.id !== id);
                 guardarDatosLocal();
                 volverLista();
+
                 showSync("Borrando en la nube...");
-                try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete_nino', id: id}) }); } catch(err) {}
-                hideSync();
+                try {
+                    await enviarGoogle({action: 'delete_nino', id: id});
+                } finally {
+                    hideSync();
+                }
             }
         }
 
