@@ -610,7 +610,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
+            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia N.S. de Coromoto<br>Capilla San José</p>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <!-- Botón Sincronizar con el nuevo estilo -->
@@ -646,7 +646,7 @@
             localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
         }
 
-        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+        let gruposList = JSON.parse(localStorage.getItem('catequesis_grupos')) || ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
 
         // --- FUNCIONES DE SINCRONIZACIÓN ---
         function showSync(msg = "Sincronizando...") {
@@ -673,21 +673,24 @@
             showSync("Actualizando...");
             try {
                 let response = await fetch(API_URL);
-                let datosNube = await response.json();
+                let dataJSON = await response.json();
                 
-                if (datosNube && Array.isArray(datosNube)) {
-                    // Limpiamos los datos para evitar errores de tipo
-                    childrenDB = datosNube.map(n => ({
-                        ...n,
-                        telefono: String(n.telefono || ""),
-                        nombre: String(n.nombre || ""),
-                        apellido: String(n.apellido || "")
-                    }));
-                    guardarDatosLocal();
-                    render(); // <--- IMPORTANTE: Volver a dibujar la pantalla
+                if (dataJSON.grupos) {
+                    gruposList = dataJSON.grupos;
+                    localStorage.setItem('catequesis_grupos', JSON.stringify(gruposList));
                 }
+                
+                if (dataJSON.ninos) {
+                    childrenDB = dataJSON.ninos.map(n => {
+                        let tlf = String(n.telefono || "").trim();
+                        if (tlf.length === 10 && !tlf.startsWith('0')) tlf = '0' + tlf;
+                        return { ...n, telefono: tlf };
+                    });
+                    guardarDatosLocal();
+                }
+                render();
             } catch (error) {
-                console.warn("Sin conexión. Usando datos locales.");
+                console.warn("Error de sincronización.");
                 render();
             }
             hideSync();
@@ -935,12 +938,24 @@
                 const presentes = ninosGrupo.filter(c => c.asistencia[fechaSeleccionada]).length;
                 const total = ninosGrupo.length;
                 const porcentaje = total === 0 ? 0 : Math.round((presentes / total) * 100);
-                let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
-                return `<div class="stat-card clickable" onclick="verGrupo('${g}')"><h4>${g}</h4><div class="number">${presentes} / ${total}</div><div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div></div>`;
+                
+                return `
+                <div class="stat-card">
+                    <div style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
+                        <h4 style="text-align:left; flex:1;">${g}</h4>
+                        <button onclick="renombrarGrupo('${g}')" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 5px;">✏️</button>
+                    </div>
+                    <div class="clickable" onclick="verGrupo('${g}')">
+                        <div class="number">${presentes} / ${total}</div>
+                        <div class="percentage" style="font-weight:bold;">${porcentaje}% Asistencia</div>
+                    </div>
+                </div>
+                `;
             }).join('');
+            
             return `${renderSundaySelector()}<div class="card"><h2>Resumen de Asistencia</h2><div class="stats-grid">${cards}</div></div>`;
         }
-
+      
         function renderListaGrupoCoordinador(grupo) {
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
@@ -1160,6 +1175,34 @@
 
         // Pintar la interfaz inmediatamente al cargar
         render();
+
+      async function renombrarGrupo(viejoNombre) {
+            if (currentRole !== 'coordinador') return;
+            
+            const nuevoNombre = prompt(`Renombrar "${viejoNombre}" a:`, viejoNombre);
+            
+            if (nuevoNombre && nuevoNombre !== viejoNombre) {
+                // 1. Actualizar localmente para velocidad
+                gruposList = gruposList.map(g => g === viejoNombre ? nuevoNombre : g);
+                childrenDB.forEach(n => { if(n.grupo === viejoNombre) n.grupo = nuevoNombre; });
+                
+                localStorage.setItem('catequesis_grupos', JSON.stringify(gruposList));
+                guardarDatosLocal();
+                render();
+                
+                // 2. Enviar a la nube
+                showSync("Renombrando grupo...");
+                try {
+                    await enviarGoogle({
+                        action: 'rename_group',
+                        viejoNombre: viejoNombre,
+                        nuevoNombre: nuevoNombre
+                    });
+                } finally {
+                    hideSync();
+                }
+            }
+        }
     </script>
     <script>
         // Registrar Service Worker para PWA
