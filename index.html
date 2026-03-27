@@ -698,36 +698,42 @@
         // --- CÁLCULO DE EDAD EXACTA ---
         function calcularEdadExacta(fechaInput) {
             if (!fechaInput) return 0;
-            // Convertimos cualquier cosa que venga (ISO o String) en un objeto Fecha real
-            let fechaNacimiento = new Date(fechaInput);
-            if (isNaN(fechaNacimiento.getTime())) return 0; // Si la fecha es inválida
+            let fecha = new Date(fechaInput);
+            if (isNaN(fecha.getTime())) return 0;
 
+            // Usamos UTC para evitar desfases de zona horaria
             let hoy = new Date();
-            let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-            let m = hoy.getMonth() - fechaNacimiento.getMonth();
+            let edad = hoy.getUTCFullYear() - fecha.getUTCFullYear();
+            let m = hoy.getUTCMonth() - fecha.getUTCMonth();
 
-            if (m < 0 || (m === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+            if (m < 0 || (m === 0 && hoy.getUTCDate() < fecha.getUTCDate())) {
                 edad--;
             }
             return edad;
         }
 
         function formatearFechaHumana(fechaInput) {
-            if (!fechaInput) return "Fecha no registrada";
+            if (!fechaInput) return "---";
             let fecha = new Date(fechaInput);
             if (isNaN(fecha.getTime())) return fechaInput;
 
-            // Configuramos para que escriba en español
-            const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
-            return fecha.toLocaleDateString('es-ES', opciones);
+            const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+            
+            let dia = fecha.getUTCDate();
+            let mes = meses[fecha.getUTCMonth()];
+            let anio = fecha.getUTCFullYear();
+
+            return `${dia} / ${mes} / ${anio}`;
         }
 
-        // Función auxiliar para que los inputs de "Editar" no se rompan
         function obtenerFechaParaInput(fechaInput) {
             if (!fechaInput) return "";
             let d = new Date(fechaInput);
             if (isNaN(d.getTime())) return "";
-            return d.toISOString().split('T')[0]; // Devuelve YYYY-MM-DD
+            let y = d.getUTCFullYear();
+            let m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            let day = String(d.getUTCDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
         }
 
         // --- CALENDARIO: LÓGICA DE DOMINGOS ---
