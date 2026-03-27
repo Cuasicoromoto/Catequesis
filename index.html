@@ -938,17 +938,13 @@
                 const presentes = ninosGrupo.filter(c => c.asistencia[fechaSeleccionada]).length;
                 const total = ninosGrupo.length;
                 const porcentaje = total === 0 ? 0 : Math.round((presentes / total) * 100);
-                
+                let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
+
                 return `
-                <div class="stat-card">
-                    <div style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
-                        <h4 style="text-align:left; flex:1;">${g}</h4>
-                        <button onclick="renombrarGrupo('${g}')" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 5px;">✏️</button>
-                    </div>
-                    <div class="clickable" onclick="verGrupo('${g}')">
-                        <div class="number">${presentes} / ${total}</div>
-                        <div class="percentage" style="font-weight:bold;">${porcentaje}% Asistencia</div>
-                    </div>
+                <div class="stat-card clickable" onclick="verGrupo('${g}')">
+                    <h4>${g}</h4>
+                    <div class="number">${presentes} / ${total}</div>
+                    <div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div>
                 </div>
                 `;
             }).join('');
@@ -960,13 +956,44 @@
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
             const ninosOrdenados = ordenarListaNinos(ninosGrupo, domingosMes);
-            let listaHTML = ninosOrdenados.length === 0 ? '<p style="color:#666; text-align:center; margin-top:15px;">Vacío.</p>' : ninosOrdenados.map(n => {
-                let badge = n.asistencia[fechaSeleccionada] ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
-                let porc = calcularAsistenciaMensualNino(n, domingosMes);
-                let cPorc = porc >= 50 ? 'var(--success)' : 'var(--danger)';
-                return `<div class="list-item"><div class="kid-info clickable-row" onclick="verNino(${n.id})" style="padding:4px;border-radius:6px;"><h3 style="font-weight:normal;">${n.nombre} ${n.apellido}</h3><p style="color:${cPorc};font-size:13px;">Asistencia: ${porc}%</p></div><div>${badge}</div></div>`;
-            }).join('');
-            return `${renderSundaySelector()}<div class="card"><div class="card-header" style="justify-content:space-between;"><h2 style="margin:0;border:none;">${grupo}</h2><div style="position:relative;"><div style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--secondary);">${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}</div><select onchange="cambiarOrdenamiento(this.value)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"><option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>Alfabético</option><option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>Asistencias</option></select></div></div><div>${listaHTML}</div></div>`;
+
+            let listaHTML = ninosOrdenados.length === 0 ?
+                '<p style="color:#666; text-align:center; margin-top:15px;">No hay niños inscritos.</p>' :
+                ninosOrdenados.map(n => {
+                    let badge = n.asistencia[fechaSeleccionada] ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
+                    let porc = calcularAsistenciaMensualNino(n, domingosMes);
+                    let cPorc = porc >= 50 ? 'var(--success)' : 'var(--danger)';
+                    return `<div class="list-item"><div class="kid-info clickable-row" onclick="verNino(${n.id})" style="padding:4px;border-radius:6px;"><h3 style="font-weight:normal;">${n.nombre} ${n.apellido}</h3><p style="color:${cPorc};font-size:13px;">Asistencia: ${porc}%</p></div><div>${badge}</div></div>`;
+                }).join('');
+
+            return `
+                ${renderSundaySelector()}
+                <div class="card">
+                    <div class="card-header" style="justify-content: space-between;">
+                        <h2 style="margin: 0; padding: 0; border: none;">${grupo}</h2>
+                        
+                        <!-- Contenedor de Acciones (Lápiz + Orden) -->
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <!-- Botón Renombrar (Lápiz) -->
+                            <button onclick="renombrarGrupo('${grupo}')" style="background: var(--secondary); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 16px;">
+                                ✏️
+                            </button>
+
+                            <!-- Botón de Ordenamiento -->
+                            <div style="position: relative; display: inline-block;">
+                                <div style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 16px; background: var(--secondary); color: var(--text); text-align: center;">
+                                    ${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}
+                                </div>
+                                <select onchange="cambiarOrdenamiento(this.value)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                                    <option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>🔤 Alfabético</option>
+                                    <option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>📊 Por asistencias</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="lista-ninos">${listaHTML}</div>
+                </div>
+            `;
         }
 
         function renderCatequista(grupo) {
@@ -1177,29 +1204,32 @@
         render();
 
       async function renombrarGrupo(viejoNombre) {
-            if (currentRole !== 'coordinador') return;
+            const nuevoNombre = prompt(`Renombrar el grupo "${viejoNombre}" a:`, viejoNombre);
             
-            const nuevoNombre = prompt(`Renombrar "${viejoNombre}" a:`, viejoNombre);
-            
-            if (nuevoNombre && nuevoNombre !== viejoNombre) {
-                // 1. Actualizar localmente para velocidad
-                gruposList = gruposList.map(g => g === viejoNombre ? nuevoNombre : g);
-                childrenDB.forEach(n => { if(n.grupo === viejoNombre) n.grupo = nuevoNombre; });
+            if (nuevoNombre && nuevoNombre.trim() !== "" && nuevoNombre !== viejoNombre) {
+                const confirmacion = confirm(`¿Estás seguro? Se cambiará el nombre de "${viejoNombre}" a "${nuevoNombre}" para todos los niños de este grupo.`);
                 
-                localStorage.setItem('catequesis_grupos', JSON.stringify(gruposList));
-                guardarDatosLocal();
-                render();
-                
-                // 2. Enviar a la nube
-                showSync("Renombrando grupo...");
-                try {
-                    await enviarGoogle({
-                        action: 'rename_group',
-                        viejoNombre: viejoNombre,
-                        nuevoNombre: nuevoNombre
-                    });
-                } finally {
-                    hideSync();
+                if (confirmacion) {
+                    // 1. Cambio local inmediato
+                    gruposList = gruposList.map(g => g === viejoNombre ? nuevoNombre : g);
+                    childrenDB.forEach(n => { if(n.grupo === viejoNombre) n.grupo = nuevoNombre; });
+                    viewingGroup = nuevoNombre; // Actualizar vista actual
+                    
+                    localStorage.setItem('catequesis_grupos', JSON.stringify(gruposList));
+                    guardarDatosLocal();
+                    render();
+                    
+                    // 2. Cambio en la nube
+                    showSync("Renombrando en Google Sheets...");
+                    try {
+                        await enviarGoogle({
+                            action: 'rename_group',
+                            viejoNombre: viejoNombre,
+                            nuevoNombre: nuevoNombre
+                        });
+                    } finally {
+                        hideSync();
+                    }
                 }
             }
         }
