@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
- 
+  
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -584,6 +584,20 @@
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Ajuste para el botón de sincronizar en el header */
+        .add-btn svg {
+            transition: transform 0.5s ease;
+        }
+
+        /* Efecto de rotación cuando está sincronizando (opcional, le da vida) */
+        .rotating {
+            animation: spin-icon 1s linear infinite;
+        }
+
+        @keyframes spin-icon {
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -596,12 +610,14 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>- Capilla San José -</p>
+            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <button class="add-btn" onclick="sincronizarConNube()" title="Actualizar Datos" style="background: transparent; box-shadow: none; font-size: 20px;">🔄</button>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- Botón Sincronizar con el nuevo estilo -->
+            <button class="add-btn" onclick="sincronizarConNube()" title="Sincronizar Datos" style="background: var(--primary); color: white; border: 1.5px solid white;">
+                <div id="sync-icon-container"></div>
+            </button>
             <div id="header-action"></div>
-        </div>
         </div>
     </header>
     
@@ -633,18 +649,24 @@
         const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
 
         // --- FUNCIONES DE SINCRONIZACIÓN ---
-        function showSync(msg = "Guardando...") {
+        function showSync(msg = "Sincronizando...") {
             const toast = document.getElementById('sync-toast');
             const msgEl = document.getElementById('sync-msg');
+            const syncIcon = document.querySelector('#sync-icon-container svg');
+            
             if(toast && msgEl) {
                 msgEl.innerText = msg;
                 toast.style.display = 'flex';
             }
+            if(syncIcon) syncIcon.classList.add('rotating'); // Empieza a girar
         }
 
         function hideSync() {
             const toast = document.getElementById('sync-toast');
+            const syncIcon = document.querySelector('#sync-icon-container svg');
+            
             if(toast) toast.style.display = 'none';
+            if(syncIcon) syncIcon.classList.remove('rotating'); // Para de girar
         }
 
         async function sincronizarConNube() {
@@ -810,7 +832,21 @@
             
             const iconVolver = `<svg width="24" height="24" viewBox="0 0 100 100" style="display: block;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 55 30 L 30 50 L 55 70" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
             const iconAgregar = `<svg width="24" height="24" viewBox="0 0 100 100" style="display: block;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 50 30 L 50 70 M 30 50 L 70 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
+            // Icono de 'Sincronizar' (Flechas circulares minimalistas)
+            const iconSincronizar = `
+                <svg width="24" height="24" viewBox="0 0 100 100" style="display: block;">
+                    <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
+                    <path d="M 30 50 A 20 20 0 0 1 70 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <path d="M 70 50 A 20 20 0 0 1 30 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <path d="M 65 45 L 70 50 L 65 55" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 35 45 L 30 50 L 35 55" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `;
 
+            // Inyectar el icono de sincronizar en su contenedor del header
+            const syncContainer = document.getElementById('sync-icon-container');
+            if (syncContainer) syncContainer.innerHTML = iconSincronizar;
+            
             if (activeTab === 'inscripcion') headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
             else if (viewingChildId !== null) headerAction.innerHTML = `<button class="add-btn" onclick="${isEditingChild ? 'cancelarEdicion()' : 'volverLista()'}" title="Volver">${iconVolver}</button>`;
             else if (currentRole === 'coordinador' && viewingGroup !== null) headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
