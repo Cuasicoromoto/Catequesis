@@ -596,7 +596,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José z</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <button class="add-btn" onclick="sincronizarConNube()" title="Actualizar Datos" style="background: transparent; box-shadow: none; font-size: 20px;">🔄</button>
@@ -648,7 +648,7 @@
         }
 
         async function sincronizarConNube() {
-            showSync("Actualizando datos...");
+            showSync("Actualizando...");
             try {
                 let response = await fetch(API_URL);
                 let datosNube = await response.json();
