@@ -898,17 +898,68 @@
         }
 
         function renderVerNino(id) {
-            const nino = childrenDB.find(c => c.id === id);
-            if (!nino) return '';
+            // Usamos == (doble igual) para que encuentre el ID aunque uno sea texto y otro número
+            const nino = childrenDB.find(c => c.id == id); 
+            
+            if (!nino) {
+                return `<div class="card"><p style="text-align:center; color:red;">⚠️ Error: No se encontró la información del niño (ID: ${id}). Intenta sincronizar de nuevo.</p></div>`;
+            }
+
             const iElm = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 32 35 L 68 35 M 45 35 L 45 28 L 55 28 L 55 35 M 38 35 L 40 68 L 60 68 L 62 35 M 50 45 L 50 58" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
             const iEdi = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 30 70 L 50 60 L 70 40 L 60 30 L 40 50 Z M 40 50 L 50 60 M 55 35 L 65 45" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            
             let btns = currentRole === 'coordinador' ? `<div style="margin-top:20px;display:flex;gap:10px;"><button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin:0;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;">${iElm} Eliminar</button><button class="btn-outline" onclick="iniciarEdicion()" style="margin:0;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;">${iEdi} Editar</button></div>` : '';
-            return `<div class="card"><div class="card-header"><h2 style="margin:0;border:none;">${nino.nombre} ${nino.apellido}</h2></div><div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div><div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div><div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div><div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div><hr style="margin:15px 0;border:0;border-top:1px solid var(--border);"><div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div><div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary);font-weight:bold;text-decoration:none;">${nino.telefono}</a></div><hr style="margin:15px 0;border:0;border-top:1px solid var(--border);"><div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div><div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>${btns}</div>`;
+            
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <h2 style="margin: 0; padding: 0; border: none;">${nino.nombre} ${nino.apellido}</h2>
+                    </div>
+                    <div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div>
+                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
+                    <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
+                    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
+                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
+                    <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
+                    <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
+                    ${btns}
+                </div>
+            `;
         }
 
         function renderEditarNino(id) {
-            const nino = childrenDB.find(c => c.id === id);
-            return `<div class="card"><div class="card-header"><h2 style="margin:0;border:none;">Editar Perfil</h2></div><form onsubmit="guardarEdicion(event, ${nino.id})"><div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div><div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div><div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div><div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div><div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div><div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div><div class="checkbox-group"><label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : ''}> Bautizado</label><label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : ''}> Comunión</label></div><div class="form-group"><label>Grupo</label><select id="edit-grupo" required>${gruposList.map(g => `<option value="${g}" ${nino.grupo === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div><button type="submit" class="btn-primary">Guardar Cambios</button></form></div>`;
+            const nino = childrenDB.find(c => c.id == id); // Usamos == flexible
+            if (!nino) return '';
+
+            return `
+            <div class="card">
+                <div class="card-header">
+                    <h2 style="margin: 0; padding: 0; border: none;">Editar Perfil</h2>
+                </div>
+                <form onsubmit="guardarEdicion(event, ${nino.id})">
+                    <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
+                    <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
+                    <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
+                    <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
+                    <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : '' }> Bautizado</label>
+                        <label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : '' }> Comunión</label>
+                    </div>
+                    <div class="form-group">
+                        <label>Asignar a Grupo</label>
+                        <select id="edit-grupo" required>
+                            ${gruposList.map(g => `<option value="${g}" ${nino.grupo===g ? 'selected' : '' }>${g}</option>`).join('')}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </form>
+            </div>
+            `;
         }
 
         // --- NAVEGACIÓN Y EVENTOS ---
