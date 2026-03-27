@@ -596,7 +596,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José y</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José z</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <button class="add-btn" onclick="sincronizarConNube()" title="Actualizar Datos" style="background: transparent; box-shadow: none; font-size: 20px;">🔄</button>
@@ -621,47 +621,89 @@
     <main id="app"></main>
     
     <script>
+        // --- CONEXIÓN CON GOOGLE SHEETS ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbzBUICHriHtaV9WnHj-YaTUuglZbkjbeDsvx2-Ar3zRby7YqiQq5KpO4NzL4lRy05Td/exec";
+        
+        let childrenDB = JSON.parse(localStorage.getItem('catequesis_db')) ||[];
+
+        function guardarDatosLocal() {
+            localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
+        }
+
+        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
+
+        // --- FUNCIONES DE SINCRONIZACIÓN ---
+        function showSync(msg = "Guardando...") {
+            const toast = document.getElementById('sync-toast');
+            const msgEl = document.getElementById('sync-msg');
+            if(toast && msgEl) {
+                msgEl.innerText = msg;
+                toast.style.display = 'flex';
+            }
+        }
+
+        function hideSync() {
+            const toast = document.getElementById('sync-toast');
+            if(toast) toast.style.display = 'none';
+        }
+
+        async function sincronizarConNube() {
+            showSync("Actualizando datos...");
+            try {
+                let response = await fetch(API_URL);
+                let datosNube = await response.json();
+                
+                if (datosNube && Array.isArray(datosNube)) {
+                    childrenDB = datosNube;
+                    guardarDatosLocal();
+                }
+            } catch (error) {
+                console.log("Modo Offline o error de conexión. Usando datos locales.");
+            }
+            hideSync();
+            render(); // CRUCIAL: Refrescar pantalla pase lo que pase
+        }
+
+        window.addEventListener('load', sincronizarConNube);
+
         // --- CÁLCULO DE EDAD EXACTA ---
         function calcularEdadExacta(fechaNacStr) {
             if (!fechaNacStr) return 0;
             let partes = fechaNacStr.split('-');
             let fechaNacimiento = new Date(partes[0], partes[1] - 1, partes[2]);
             let hoy = new Date();
-            
             let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
             let diferenciaMes = hoy.getMonth() - fechaNacimiento.getMonth();
-            
             if (diferenciaMes < 0 || (diferenciaMes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
                 edad--;
             }
             return edad;
         }
-        
+
         // --- CALENDARIO: LÓGICA DE DOMINGOS ---
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        
+        const monthNames =["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+
         function formatDateStr(date) {
             let y = date.getFullYear();
             let m = String(date.getMonth() + 1).padStart(2, '0');
             let d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
         }
-        
+
         function getUltimoDomingo() {
             let d = new Date();
             d.setDate(d.getDate() - d.getDay());
             return d;
         }
-        
-        // --- VARIABLES GLOBALES DE ESTADO ---
+
         let lastSun = getUltimoDomingo();
         let displayYear = lastSun.getFullYear();
         let displayMonth = lastSun.getMonth();
         let fechaSeleccionada = formatDateStr(lastSun);
-        
-        let currentRole = 'coordinador'; // Por defecto
-        const gruposValidos = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6', 'coordinador'];
-        
+
+        // --- RUTAS Y ROLES ---
+        let currentRole = 'coordinador';
+
         function obtenerRolDeURL() {
             const urlParams = new URLSearchParams(window.location.search);
             let rol = urlParams.get('rol');
@@ -670,148 +712,65 @@
             }
             return rol;
         }
-        
+
         const paramRol = obtenerRolDeURL();
-        
         if (paramRol) {
-            // 1. Si hay un rol en el enlace de WhatsApp/Navegador, lo validamos
             const rolLimpio = paramRol.trim().toLowerCase();
-            const grupoEncontrado = gruposValidos.find(g => g.toLowerCase() === rolLimpio);
-            
+            const grupoEncontrado = gruposList.concat(['coordinador']).find(g => g.toLowerCase() === rolLimpio);
             if (grupoEncontrado) {
                 currentRole = grupoEncontrado;
-                // ¡LA MAGIA!: Guardamos este rol en la memoria del teléfono
                 localStorage.setItem('catequesis_rol_guardado', currentRole);
-            } else {
-                alert("⚠️ El enlace indica un grupo inválido: " + paramRol);
             }
         } else {
-            // 2. Si NO hay rol en la URL (ej. al abrir la App Instalada), buscamos en memoria
             const rolGuardado = localStorage.getItem('catequesis_rol_guardado');
-            if (rolGuardado && gruposValidos.includes(rolGuardado)) {
-                currentRole = rolGuardado;
-            }
+            if (rolGuardado) currentRole = rolGuardado;
         }
-        
+
         let activeTab = 'resumen';
         let viewingGroup = null;
         let viewingChildId = null;
         let isEditingChild = false;
-        
-        // --- CONEXIÓN CON GOOGLE SHEETS ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbzBUICHriHtaV9WnHj-YaTUuglZbkjbeDsvx2-Ar3zRby7YqiQq5KpO4NzL4lRy05Td/exec";
-        
-        // Empezamos con la memoria caché (así la app abre rápido aunque no haya internet)
-        let childrenDB = JSON.parse(localStorage.getItem('catequesis_db')) ||[];
 
-        function guardarDatosLocal() {
-            localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
-        }
-
-        // --- FUNCIONES DE SINCRONIZACIÓN ---
-        function showSync(msg = "Guardando en la nube...") {
-            document.getElementById('sync-msg').innerText = msg;
-            document.getElementById('sync-toast').style.display = 'flex';
-        }
-
-        function hideSync() {
-            document.getElementById('sync-toast').style.display = 'none';
-        }
-
-        // Esta función descarga los datos de Google Sheets al abrir la app
-        async function sincronizarConNube() {
-            showSync("Actualizando datos...");
-            try {
-                let response = await fetch(API_URL);
-                let datosNube = await response.json();
-                
-                // Si Sheets devuelve algo válido, actualizamos la memoria del teléfono
-                if (datosNube && Array.isArray(datosNube)) {
-                    childrenDB = datosNube;
-                    guardarDatosLocal();
-                    render(); // Refrescar la pantalla
-                }
-            } catch (error) {
-                console.log("No hay conexión a internet. Usando datos guardados en el celular.");
-            }
-            hideSync();
-        }
-
-        // Llamamos a la sincronización en segundo plano al abrir la app
-        window.addEventListener('load', sincronizarConNube);
-
-        const gruposList =['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
-        
-        // --- LÓGICA DE INSTALACIÓN PWA ---
+        // --- PWA: MODAL DE INSTALACIÓN ---
         let deferredPrompt;
-        
-        // Escuchar cuando el navegador detecta que la app es instalable
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevenir que Chrome muestre el mini-infobar nativo por defecto
             e.preventDefault();
-            
-            // Guardar el evento para poder dispararlo luego cuando el usuario haga clic
             deferredPrompt = e;
-            
-            // Mostrar nuestro modal personalizado
             const installModal = document.getElementById('install-modal');
-            installModal.classList.add('show');
+            if(installModal) installModal.classList.add('show');
         });
-        
-        // Función para cerrar el modal si el usuario elige "Ahora no"
+
         function cerrarModalInstalacion() {
             const installModal = document.getElementById('install-modal');
-            installModal.classList.remove('show');
+            if(installModal) installModal.classList.remove('show');
         }
-        
-        // Función que se ejecuta al hacer clic en "Instalar"
+
         async function instalarApp() {
             if (deferredPrompt) {
-                // Ocultar nuestro modal
                 cerrarModalInstalacion();
-                
-                // Mostrar el cuadro de diálogo nativo de instalación de Android/Chrome
                 deferredPrompt.prompt();
-                
-                // Esperar a que el usuario responda al cuadro de diálogo nativo
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('Usuario aceptó la instalación');
-                } else {
-                    console.log('Usuario rechazó la instalación');
-                }
-                
-                // Limpiar la variable, ya no se puede usar el mismo prompt dos veces
+                await deferredPrompt.userChoice;
                 deferredPrompt = null;
             }
         }
-        
-        // Detectar si la app se instaló exitosamente
+
         window.addEventListener('appinstalled', () => {
             cerrarModalInstalacion();
             deferredPrompt = null;
-            console.log('¡La PWA ha sido instalada correctamente!');
         });
-        
-        function guardarDatos() {
-            localStorage.setItem('catequesis_db', JSON.stringify(childrenDB));
-        }
-        
-        const gruposList = ['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4', 'Grupo 5', 'Grupo 6'];
-        
-        // --- CÁLCULO DE ASISTENCIA MENSUAL ---
+
+        // --- ASISTENCIA Y ORDENAMIENTO ---
         function getDomingosDelMesActual(year, month) {
-            let sundays = [];
+            let sundays =[];
             let d = new Date(year, month, 1);
             while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
-            
             while (d.getMonth() === month) {
                 sundays.push(formatDateStr(new Date(d)));
                 d.setDate(d.getDate() + 7);
             }
             return sundays;
         }
-        
+
         function calcularAsistenciaMensualNino(nino, domingosDelMes) {
             if (domingosDelMes.length === 0) return 0;
             let asistencias = 0;
@@ -820,150 +779,71 @@
             });
             return Math.round((asistencias / domingosDelMes.length) * 100);
         }
-        
-        // --- ORDENAMIENTO DE LISTAS ---
-        let currentSortOrder = 'alfabetico'; // Por defecto, orden alfabético
-        
+
+        let currentSortOrder = 'alfabetico';
+
         function cambiarOrdenamiento(orden) {
             currentSortOrder = orden;
             render();
         }
-        
+
         function ordenarListaNinos(ninos, domingosMes) {
-            let ninosOrdenados = [...ninos]; // Clonamos la lista para no alterar la original
-            
+            let ninosOrdenados = [...ninos];
             ninosOrdenados.sort((a, b) => {
                 let nombreA = (a.nombre + ' ' + a.apellido).toLowerCase();
                 let nombreB = (b.nombre + ' ' + b.apellido).toLowerCase();
-                
-                if (currentSortOrder === 'alfabetico') {
-                    return nombreA.localeCompare(nombreB);
-                } else if (currentSortOrder === 'asistencia') {
-                    let asisA = calcularAsistenciaMensualNino(a, domingosMes);
-                    let asisB = calcularAsistenciaMensualNino(b, domingosMes);
-                    
-                    // Si tienen la misma asistencia, los desempata alfabéticamente
-                    if (asisA === asisB) {
-                        return nombreA.localeCompare(nombreB);
-                    }
-                    return asisB - asisA; // De mayor a menor asistencia
-                }
+                if (currentSortOrder === 'alfabetico') return nombreA.localeCompare(nombreB);
+                let asisA = calcularAsistenciaMensualNino(a, domingosMes);
+                let asisB = calcularAsistenciaMensualNino(b, domingosMes);
+                if (asisA === asisB) return nombreA.localeCompare(nombreB);
+                return asisB - asisA;
             });
-            
             return ninosOrdenados;
         }
-        
-        // --- FUNCIONES DE RENDERIZADO PRINCIPAL ---
+
+        // --- RENDERIZADO VISUAL ---
         function render() {
             const app = document.getElementById('app');
             const headerAction = document.getElementById('header-action');
+            if(!app || !headerAction) return;
             app.innerHTML = '';
             
-            // --- DEFINICIÓN DE LOS ICONOS SVG ---
-            // Icono de 'Volver' con la flecha desplazada a la izquierda (ya no parece reloj)
-            const iconVolver = `
-                <svg width="24" height="24" viewBox="0 0 100 100" style="display: block;">
-                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
-                  <path d="M 55 30 L 30 50 L 55 70" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            `;
-            
-            // Icono de 'Agregar'
-            const iconAgregar = `
-                <svg width="24" height="24" viewBox="0 0 100 100" style="display: block;">
-                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
-                  <path d="M 50 30 L 50 70 M 30 50 L 70 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/>
-                </svg>
-            `;
-            
-            // --- LÓGICA INTELIGENTE DEL BOTÓN DEL HEADER ---
-            if (activeTab === 'inscripcion') {
-                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
-            }
-            else if (viewingChildId !== null) {
-                if (isEditingChild) {
-                    headerAction.innerHTML = `<button class="add-btn" onclick="cancelarEdicion()" title="Volver">${iconVolver}</button>`;
-                } else {
-                    headerAction.innerHTML = `<button class="add-btn" onclick="volverLista()" title="Volver">${iconVolver}</button>`;
-                }
-            }
-            else if (currentRole === 'coordinador' && viewingGroup !== null) {
-                headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
-            }
-            else if (currentRole === 'coordinador' && activeTab === 'resumen' && viewingGroup === null) {
-                headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()" title="Inscribir Nuevo Niño">${iconAgregar}</button>`;
-            }
-            else {
-                headerAction.innerHTML = '';
-            }
-            
-            // Renderizado de las vistas
-            if (currentRole === 'coordinador') {
-                app.innerHTML = renderCoordinador();
-            } else {
-                app.innerHTML = renderCatequista(currentRole);
-            }
+            const iconVolver = `<svg width="24" height="24" viewBox="0 0 100 100" style="display: block;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 55 30 L 30 50 L 55 70" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            const iconAgregar = `<svg width="24" height="24" viewBox="0 0 100 100" style="display: block;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 50 30 L 50 70 M 30 50 L 70 50" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round"/></svg>`;
+
+            if (activeTab === 'inscripcion') headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
+            else if (viewingChildId !== null) headerAction.innerHTML = `<button class="add-btn" onclick="${isEditingChild ? 'cancelarEdicion()' : 'volverLista()'}" title="Volver">${iconVolver}</button>`;
+            else if (currentRole === 'coordinador' && viewingGroup !== null) headerAction.innerHTML = `<button class="add-btn" onclick="volverResumen()" title="Volver">${iconVolver}</button>`;
+            else if (currentRole === 'coordinador' && activeTab === 'resumen' && viewingGroup === null) headerAction.innerHTML = `<button class="add-btn" onclick="abrirInscripcion()" title="Inscribir Nuevo Niño">${iconAgregar}</button>`;
+            else headerAction.innerHTML = '';
+
+            if (currentRole === 'coordinador') app.innerHTML = renderCoordinador();
+            else app.innerHTML = renderCatequista(currentRole);
         }
-        
+
         function renderSundaySelector() {
-            let sundays = [];
+            let sundays =[];
             let d = new Date(displayYear, displayMonth, 1);
             while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
-            
-            while (d.getMonth() === displayMonth) {
-                sundays.push(new Date(d));
-                d.setDate(d.getDate() + 7);
-            }
-            
+            while (d.getMonth() === displayMonth) { sundays.push(new Date(d)); d.setDate(d.getDate() + 7); }
             let sundaysHtml = sundays.map(sun => {
                 let dateStr = formatDateStr(sun);
-                let dayNum = sun.getDate();
                 let isActive = dateStr === fechaSeleccionada ? 'active' : '';
-                return `
-                    <div class="sunday-btn ${isActive}" onclick="seleccionarDomingo('${dateStr}')">
-                        Dom <strong>${dayNum}</strong>
-                    </div>`;
+                return `<div class="sunday-btn ${isActive}" onclick="seleccionarDomingo('${dateStr}')">Dom <strong>${sun.getDate()}</strong></div>`;
             }).join('');
-            
-            return `
-                <div class="month-nav">
-                    <button class="btn-icon-month" onclick="cambiarMes(-1)">◀</button>
-                    <span>${monthNames[displayMonth]} ${displayYear}</span>
-                    <button class="btn-icon-month" onclick="cambiarMes(1)">▶</button>
-                </div>
-                <div class="sundays-row">
-                    ${sundaysHtml}
-                </div>
-            `;
+            return `<div class="month-nav"><button class="btn-icon-month" onclick="cambiarMes(-1)">◀</button><span>${monthNames[displayMonth]} ${displayYear}</span><button class="btn-icon-month" onclick="cambiarMes(1)">▶</button></div><div class="sundays-row">${sundaysHtml}</div>`;
         }
-        
+
         function renderCoordinador() {
-            let html = '';
-            if (activeTab === 'inscripcion') {
-                html += renderFormularioInscripcion();
-            }
-            else if (activeTab === 'resumen') {
-                if (viewingChildId !== null) {
-                    if (isEditingChild) {
-                        html += renderEditarNino(viewingChildId);
-                    } else {
-                        html += renderVerNino(viewingChildId);
-                    }
-                } else if (viewingGroup !== null) {
-                    html += renderListaGrupoCoordinador(viewingGroup);
-                } else {
-                    html += renderTarjetasResumen();
-                }
-            }
-            return html;
+            if (activeTab === 'inscripcion') return renderFormularioInscripcion();
+            if (viewingChildId !== null) return isEditingChild ? renderEditarNino(viewingChildId) : renderVerNino(viewingChildId);
+            if (viewingGroup !== null) return renderListaGrupoCoordinador(viewingGroup);
+            return renderTarjetasResumen();
         }
-        
+
         function renderFormularioInscripcion() {
             return `
-                <div class="card">
-                    <div class="card-header">
-                        <h2 style="margin: 0; padding: 0; border: none;">Inscribir Nuevo</h2>
-                    </div>
+                <div class="card"><div class="card-header"><h2 style="margin:0;border:none;">Inscribir Nuevo</h2></div>
                     <form onsubmit="registrarNino(event)">
                         <div class="form-group"><label>Nombres</label><input type="text" id="reg-nombre" required></div>
                         <div class="form-group"><label>Apellidos</label><input type="text" id="reg-apellido" required></div>
@@ -971,22 +851,13 @@
                         <div class="form-group"><label>Representante</label><input type="text" id="reg-repre" required></div>
                         <div class="form-group"><label>Teléfono</label><input type="tel" id="reg-tlf" required></div>
                         <div class="form-group"><label>Sector</label><input type="text" id="reg-sector" required></div>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" id="reg-bautizado"> Bautizado</label>
-                            <label><input type="checkbox" id="reg-comunion"> Comunión</label>
-                        </div>
-                        <div class="form-group">
-                            <label>Asignar a Grupo</label>
-                            <select id="reg-grupo" required>
-                                ${gruposList.map(g => `<option value="${g}">${g}</option>`).join('')}
-                            </select>
-                        </div>
+                        <div class="checkbox-group"><label><input type="checkbox" id="reg-bautizado"> Bautizado</label><label><input type="checkbox" id="reg-comunion"> Comunión</label></div>
+                        <div class="form-group"><label>Asignar a Grupo</label><select id="reg-grupo" required>${gruposList.map(g => `<option value="${g}">${g}</option>`).join('')}</select></div>
                         <button type="submit" class="btn-primary">Guardar Inscripción</button>
                     </form>
-                </div>
-            `;
+                </div>`;
         }
-        
+
         function renderTarjetasResumen() {
             let cards = gruposList.map(g => {
                 const ninosGrupo = childrenDB.filter(c => c.grupo === g);
@@ -994,351 +865,89 @@
                 const total = ninosGrupo.length;
                 const porcentaje = total === 0 ? 0 : Math.round((presentes / total) * 100);
                 let colorClass = porcentaje >= 50 ? 'var(--success)' : (total === 0 ? 'var(--text)' : 'var(--danger)');
-                
-                return `
-                <div class="stat-card clickable" onclick="verGrupo('${g}')">
-                    <h4>${g}</h4>
-                    <div class="number">${presentes} / ${total}</div>
-                    <div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div>
-                </div>
-                `;
+                return `<div class="stat-card clickable" onclick="verGrupo('${g}')"><h4>${g}</h4><div class="number">${presentes} / ${total}</div><div class="percentage" style="color: ${colorClass}; font-weight:bold;">${porcentaje}% Asistencia</div></div>`;
             }).join('');
-            
-            return `
-                ${renderSundaySelector()}
-                <div class="card">
-                    <h2>Resumen de Asistencia</h2>
-                    <div class="stats-grid">
-                        ${cards}
-                    </div>
-                </div>
-            `;
+            return `${renderSundaySelector()}<div class="card"><h2>Resumen de Asistencia</h2><div class="stats-grid">${cards}</div></div>`;
         }
-        
+
         function renderListaGrupoCoordinador(grupo) {
             const ninosGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
-            
             const ninosOrdenados = ordenarListaNinos(ninosGrupo, domingosMes);
-            
-            let listaHTML = ninosOrdenados.length === 0 ?
-                '<p style="color:#666; text-align:center; margin-top:15px;">No hay niños inscritos en este grupo.</p>' :
-                ninosOrdenados.map(n => {
-                    let estaPresente = n.asistencia[fechaSeleccionada] === true;
-                    let badge = estaPresente ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
-                    
-                    let porcentaje = calcularAsistenciaMensualNino(n, domingosMes);
-                    let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
-                    
-                    return `
-                        <div class="list-item">
-                            <div class="kid-info clickable-row" onclick="verNino(${n.id})" style="padding: 4px; border-radius: 6px;">
-                                <h3 style="font-weight: normal;">${n.nombre} ${n.apellido}</h3>
-                                <p style="color: ${colorPorc}; margin-top: 2px; font-size: 13px;">Asistencia del mes: ${porcentaje}%</p>
-                            </div>
-                            <div style="display: flex; align-items: center;">${badge}</div>
-                        </div>
-                    `;
-                }).join('');
-            
-            return `
-                ${renderSundaySelector()}
-                <div class="card">
-                    <div class="card-header" style="justify-content: space-between;">
-                        <h2 style="margin: 0; padding: 0; border: none;">${grupo}</h2>
-                        
-                        <div style="position: relative; display: inline-block;">
-                            <div style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 16px; background: var(--secondary); color: var(--text); text-align: center;">
-                                ${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}
-                            </div>
-                            <select onchange="cambiarOrdenamiento(this.value)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                                <option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>🔤 Alfabéticamente</option>
-                                <option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>📊 Por asistencias</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="lista-ninos">
-                        ${listaHTML}
-                    </div>
-                </div>
-            `;
+            let listaHTML = ninosOrdenados.length === 0 ? '<p style="color:#666; text-align:center; margin-top:15px;">Vacío.</p>' : ninosOrdenados.map(n => {
+                let badge = n.asistencia[fechaSeleccionada] ? `<span class="badge badge-present">Presente</span>` : `<span class="badge badge-absent">Ausente</span>`;
+                let porc = calcularAsistenciaMensualNino(n, domingosMes);
+                let cPorc = porc >= 50 ? 'var(--success)' : 'var(--danger)';
+                return `<div class="list-item"><div class="kid-info clickable-row" onclick="verNino(${n.id})" style="padding:4px;border-radius:6px;"><h3 style="font-weight:normal;">${n.nombre} ${n.apellido}</h3><p style="color:${cPorc};font-size:13px;">Asistencia: ${porc}%</p></div><div>${badge}</div></div>`;
+            }).join('');
+            return `${renderSundaySelector()}<div class="card"><div class="card-header" style="justify-content:space-between;"><h2 style="margin:0;border:none;">${grupo}</h2><div style="position:relative;"><div style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--secondary);">${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}</div><select onchange="cambiarOrdenamiento(this.value)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"><option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>Alfabético</option><option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>Asistencias</option></select></div></div><div>${listaHTML}</div></div>`;
         }
-        
+
         function renderCatequista(grupo) {
-            if (viewingChildId !== null) {
-                return renderVerNino(viewingChildId);
-            }
-            
+            if (viewingChildId !== null) return renderVerNino(viewingChildId);
             const ninosDelGrupo = childrenDB.filter(c => c.grupo === grupo);
             const domingosMes = getDomingosDelMesActual(displayYear, displayMonth);
-            
             const ninosOrdenados = ordenarListaNinos(ninosDelGrupo, domingosMes);
-            
-            let listaHTML = ninosOrdenados.length === 0 ?
-                '<p style="text-align:center; color:#666; margin-top:15px;">No hay niños asignados a este grupo aún.</p>' :
-                ninosOrdenados.map(c => {
-                    let estaPresente = c.asistencia[fechaSeleccionada] === true;
-                    
-                    let porcentaje = calcularAsistenciaMensualNino(c, domingosMes);
-                    let colorPorc = porcentaje >= 50 ? 'var(--success)' : 'var(--danger)';
-                    
-                    return `
-                    <div class="list-item">
-                        <div class="kid-info clickable-row" onclick="verNino(${c.id})" style="padding: 4px; border-radius: 6px;">
-                            <h3 style="font-weight: normal;">${c.nombre} ${c.apellido}</h3>
-                            <p style="color: ${colorPorc}; margin-top: 2px; font-size: 13px;">Asistencia del mes: ${porcentaje}%</p>
-                        </div>
-                        <div style="display: flex; align-items: center;">
-                            <label class="switch">
-                                <input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                `
-                }).join('');
-            
-            return `
-                ${renderSundaySelector()}
-                <div class="card">
-                    <div class="card-header" style="justify-content: space-between;">
-                        <div style="display: flex; align-items: center;">
-                            <h2 style="margin: 0; padding: 0; border: none;">${grupo}</h2>
-                        </div>
-                        
-                        <!-- Contenedor del truco del Select -->
-                        <div style="position: relative; display: inline-block;">
-                            <!-- Cuadro visible -->
-                            <div style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 16px; background: var(--secondary); color: var(--text); text-align: center;">
-                                ${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}
-                            </div>
-                            <!-- Select real invisible superpuesto -->
-                            <select onchange="cambiarOrdenamiento(this.value)" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                                <option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>🔤 Alfabéticamente</option>
-                                <option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>📊 Por asistencias</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div id="lista-ninos">
-                        ${listaHTML}
-                    </div>
-                </div>
-            `;
+            let listaHTML = ninosOrdenados.length === 0 ? '<p style="text-align:center;color:#666;margin-top:15px;">No hay niños asignados.</p>' : ninosOrdenados.map(c => {
+                let estaPresente = c.asistencia[fechaSeleccionada] === true;
+                let porc = calcularAsistenciaMensualNino(c, domingosMes);
+                let cPorc = porc >= 50 ? 'var(--success)' : 'var(--danger)';
+                return `<div class="list-item"><div class="kid-info clickable-row" onclick="verNino(${c.id})" style="padding:4px;border-radius:6px;"><h3 style="font-weight:normal;">${c.nombre} ${c.apellido}</h3><p style="color:${cPorc};font-size:13px;">Asistencia: ${porc}%</p></div><div><label class="switch"><input type="checkbox" ${estaPresente ? 'checked' : ''} onchange="toggleAsistencia(${c.id})"><span class="slider"></span></label></div></div>`;
+            }).join('');
+            return `${renderSundaySelector()}<div class="card"><div class="card-header" style="justify-content:space-between;"><h2 style="margin:0;border:none;">${grupo}</h2><div style="position:relative;"><div style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--secondary);">${currentSortOrder === 'alfabetico' ? '🔤' : '📊'}</div><select onchange="cambiarOrdenamiento(this.value)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;"><option value="alfabetico" ${currentSortOrder === 'alfabetico' ? 'selected' : ''}>Alfabético</option><option value="asistencia" ${currentSortOrder === 'asistencia' ? 'selected' : ''}>Asistencias</option></select></div></div><div>${listaHTML}</div></div>`;
         }
-        
+
         function renderVerNino(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (!nino) return '';
-            let edadExacta = calcularEdadExacta(nino.fechaNac);
-            
-            // --- DEFINICIÓN DE LOS NUEVOS ICONOS ---
-            // Icono de Eliminar (Basurero minimalista)
-            const iconEliminar = `
-                <svg width="20" height="20" viewBox="0 0 100 100" style="display: block; flex-shrink: 0;">
-                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
-                  <path d="M 32 35 L 68 35 M 45 35 L 45 28 L 55 28 L 55 35 M 38 35 L 40 68 L 60 68 L 62 35 M 50 45 L 50 58" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            `;
-            
-            // Icono de Editar (Lápiz diagonal)
-            const iconEditar = `
-                <svg width="20" height="20" viewBox="0 0 100 100" style="display: block; flex-shrink: 0;">
-                  <circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/>
-                  <path d="M 30 70 L 50 60 L 70 40 L 60 30 L 40 50 Z M 40 50 L 50 60 M 55 35 L 65 45" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            `;
-            
-            let editButtonsHtml = '';
-            if (currentRole === 'coordinador') {
-                // Notarás que agregué "display: flex; align-items: center; justify-content: center; gap: 8px;" a los estilos de los botones
-                editButtonsHtml = `
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin-top:0; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                          ${iconEliminar} Eliminar
-                        </button>
-                        <button class="btn-outline" onclick="iniciarEdicion()" style="margin-top:0; flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                          ${iconEditar} Editar
-                        </button>
-                    </div>`;
-            }
-            
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <h2 style="margin: 0; padding: 0; border: none;">${nino.nombre} ${nino.apellido}</h2>
-                    </div>
-                    <div class="profile-data"><strong>Edad:</strong> ${edadExacta} años</div>
-                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
-                    <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
-                    <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
-                    <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
-                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
-                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
-                    <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
-                    <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
-                    ${editButtonsHtml}
-                </div>
-            `;
+            const iElm = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 32 35 L 68 35 M 45 35 L 45 28 L 55 28 L 55 35 M 38 35 L 40 68 L 60 68 L 62 35 M 50 45 L 50 58" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            const iEdi = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 30 70 L 50 60 L 70 40 L 60 30 L 40 50 Z M 40 50 L 50 60 M 55 35 L 65 45" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            let btns = currentRole === 'coordinador' ? `<div style="margin-top:20px;display:flex;gap:10px;"><button class="btn-danger-outline" onclick="eliminarNino(${nino.id})" style="margin:0;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;">${iElm} Eliminar</button><button class="btn-outline" onclick="iniciarEdicion()" style="margin:0;flex:1;display:flex;align-items:center;justify-content:center;gap:8px;">${iEdi} Editar</button></div>` : '';
+            return `<div class="card"><div class="card-header"><h2 style="margin:0;border:none;">${nino.nombre} ${nino.apellido}</h2></div><div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div><div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div><div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div><div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div><hr style="margin:15px 0;border:0;border-top:1px solid var(--border);"><div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div><div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary);font-weight:bold;text-decoration:none;">${nino.telefono}</a></div><hr style="margin:15px 0;border:0;border-top:1px solid var(--border);"><div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div><div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>${btns}</div>`;
         }
-        
+
         function renderEditarNino(id) {
             const nino = childrenDB.find(c => c.id === id);
-            if (!nino) return '';
-            
-            return `
-            <div class="card">
-                <div class="card-header">
-                    <h2 style="margin: 0; padding: 0; border: none;">Editar Perfil</h2>
-                </div>
-                <form onsubmit="guardarEdicion(event, ${nino.id})">
-                    <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
-                    <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
-                    <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
-                    <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
-                    <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
-                    <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : '' }> Bautizado</label>
-                        <label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : '' }> Comunión</label>
-                    </div>
-                    <div class="form-group">
-                        <label>Asignar a Grupo</label>
-                        <select id="edit-grupo" required>
-                            ${gruposList.map(g => `<option value="${g}" ${nino.grupo===g ? 'selected' : '' }>${g}</option>`).join('')}
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-primary">Guardar Cambios</button>
-                </form>
-            </div>
-            `;
+            return `<div class="card"><div class="card-header"><h2 style="margin:0;border:none;">Editar Perfil</h2></div><form onsubmit="guardarEdicion(event, ${nino.id})"><div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div><div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div><div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div><div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div><div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div><div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div><div class="checkbox-group"><label><input type="checkbox" id="edit-bautizado" ${nino.bautizado ? 'checked' : ''}> Bautizado</label><label><input type="checkbox" id="edit-comunion" ${nino.comunion ? 'checked' : ''}> Comunión</label></div><div class="form-group"><label>Grupo</label><select id="edit-grupo" required>${gruposList.map(g => `<option value="${g}" ${nino.grupo === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div><button type="submit" class="btn-primary">Guardar Cambios</button></form></div>`;
         }
-        
-        //--- NAVEGACIÓN Y EVENTOS ---
-        function cambiarMes(delta) {
-            displayMonth += delta;
-            if (displayMonth > 11) {
-                displayMonth = 0;
-                displayYear++;
-            }
-            else if (displayMonth < 0) {
-                displayMonth = 11;
-                displayYear--;
-            }
-            let d = new Date(displayYear, displayMonth, 1);
-            while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
-            fechaSeleccionada = formatDateStr(d);
-            render();
-        }
-        
-        function seleccionarDomingo(dateStr) {
-            fechaSeleccionada = dateStr;
-            render();
-        }
-        
-        function abrirInscripcion() {
-            activeTab = 'inscripcion';
-            render();
-        }
-        
-        function verGrupo(grupo) {
-            viewingGroup = grupo;
-            render();
-        }
-        
-        function volverResumen() {
-            activeTab = 'resumen';
-            viewingGroup = null;
-            render();
-        }
-        
-        function verNino(id) {
-            viewingChildId = id;
-            isEditingChild = false;
-            render();
-        }
-        
-        function volverLista() {
-            viewingChildId = null;
-            isEditingChild = false;
-            render();
-        }
-        
-        function iniciarEdicion() {
-            isEditingChild = true;
-            render();
-        }
-        
-        function cancelarEdicion() {
-            isEditingChild = false;
-            render();
-        }
-        
-        // --- ACCIONES OPTIMISTAS (Actualizan la pantalla primero, luego envían a la nube) ---
-        
+
+        // --- NAVEGACIÓN Y EVENTOS ---
+        function cambiarMes(delta) { displayMonth += delta; if (displayMonth > 11) { displayMonth = 0; displayYear++; } else if (displayMonth < 0) { displayMonth = 11; displayYear--; } let d = new Date(displayYear, displayMonth, 1); while (d.getDay() !== 0) d.setDate(d.getDate() + 1); fechaSeleccionada = formatDateStr(d); render(); }
+        function seleccionarDomingo(dateStr) { fechaSeleccionada = dateStr; render(); }
+        function abrirInscripcion() { activeTab = 'inscripcion'; render(); }
+        function verGrupo(grupo) { viewingGroup = grupo; render(); }
+        function volverResumen() { activeTab = 'resumen'; viewingGroup = null; render(); }
+        function verNino(id) { viewingChildId = id; isEditingChild = false; render(); }
+        function volverLista() { viewingChildId = null; isEditingChild = false; render(); }
+        function iniciarEdicion() { isEditingChild = true; render(); }
+        function cancelarEdicion() { isEditingChild = false; render(); }
+
+        // --- ACCIONES CON LA NUBE ---
         async function toggleAsistencia(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (nino) {
-                // 1. Actualizar pantalla al instante
                 nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
                 guardarDatosLocal();
                 render();
-
-                // 2. Enviar a Google Sheets en segundo plano
                 showSync("Guardando asistencia...");
                 try {
-                    await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'toggle_asistencia',
-                            id: id,
-                            fecha: fechaSeleccionada,
-                            presente: nino.asistencia[fechaSeleccionada]
-                        })
-                    });
-                } catch(err) {
-                    console.error("Modo Offline: La asistencia se enviará después.");
-                }
+                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'toggle_asistencia', id: id, fecha: fechaSeleccionada, presente: nino.asistencia[fechaSeleccionada] }) });
+                } catch(err) {}
                 hideSync();
             }
         }
 
         async function registrarNino(e) {
             e.preventDefault();
-            const nuevoNino = {
-                id: Date.now(),
-                nombre: document.getElementById('reg-nombre').value,
-                apellido: document.getElementById('reg-apellido').value,
-                fechaNac: document.getElementById('reg-fecha').value,
-                representante: document.getElementById('reg-repre').value,
-                telefono: document.getElementById('reg-tlf').value,
-                sector: document.getElementById('reg-sector').value,
-                bautizado: document.getElementById('reg-bautizado').checked,
-                comunion: document.getElementById('reg-comunion').checked,
-                grupo: document.getElementById('reg-grupo').value,
-                asistencia: {}
-            };
-            
-            // 1. Actualizar pantalla al instante
+            const nuevoNino = { id: Date.now(), nombre: document.getElementById('reg-nombre').value, apellido: document.getElementById('reg-apellido').value, fechaNac: document.getElementById('reg-fecha').value, representante: document.getElementById('reg-repre').value, telefono: document.getElementById('reg-tlf').value, sector: document.getElementById('reg-sector').value, bautizado: document.getElementById('reg-bautizado').checked, comunion: document.getElementById('reg-comunion').checked, grupo: document.getElementById('reg-grupo').value, asistencia: {} };
             childrenDB.push(nuevoNino);
             guardarDatosLocal();
-            alert(`¡${nuevoNino.nombre} inscrito exitosamente en ${nuevoNino.grupo}!`);
+            alert(`¡${nuevoNino.nombre} inscrito!`);
             activeTab = 'resumen';
             viewingGroup = nuevoNino.grupo;
             render();
-
-            // 2. Guardar en Google Sheets
-            showSync("Registrando en servidor...");
-            try {
-                await fetch(API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({action: 'add_nino', nino: nuevoNino})
-                });
-            } catch(err) {
-                console.error("Guardado localmente. Falla de conexión a internet.");
-            }
+            showSync("Subiendo a Google Sheets...");
+            try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'add_nino', nino: nuevoNino}) }); } catch(err) {}
             hideSync();
         }
 
@@ -1346,32 +955,13 @@
             e.preventDefault();
             const nino = childrenDB.find(c => c.id === id);
             if (nino) {
-                nino.nombre = document.getElementById('edit-nombre').value;
-                nino.apellido = document.getElementById('edit-apellido').value;
-                nino.fechaNac = document.getElementById('edit-fecha').value;
-                nino.representante = document.getElementById('edit-repre').value;
-                nino.telefono = document.getElementById('edit-tlf').value;
-                nino.sector = document.getElementById('edit-sector').value;
-                nino.bautizado = document.getElementById('edit-bautizado').checked;
-                nino.comunion = document.getElementById('edit-comunion').checked;
-                nino.grupo = document.getElementById('edit-grupo').value;
-                
-                // 1. Pantalla
+                nino.nombre = document.getElementById('edit-nombre').value; nino.apellido = document.getElementById('edit-apellido').value; nino.fechaNac = document.getElementById('edit-fecha').value; nino.representante = document.getElementById('edit-repre').value; nino.telefono = document.getElementById('edit-tlf').value; nino.sector = document.getElementById('edit-sector').value; nino.bautizado = document.getElementById('edit-bautizado').checked; nino.comunion = document.getElementById('edit-comunion').checked; nino.grupo = document.getElementById('edit-grupo').value;
                 guardarDatosLocal();
-                alert('¡Datos actualizados correctamente!');
+                alert('¡Actualizado!');
                 isEditingChild = false;
                 render();
-
-                // 2. Nube
                 showSync("Actualizando nube...");
-                try {
-                    await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({action: 'edit_nino', nino: nino})
-                    });
-                } catch(err) {
-                    console.error("Editado localmente.");
-                }
+                try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'edit_nino', nino: nino}) }); } catch(err) {}
                 hideSync();
             }
         }
@@ -1379,28 +969,18 @@
         async function eliminarNino(id) {
             const nino = childrenDB.find(c => c.id === id);
             if (!nino) return;
-            const confirmar = confirm(`¿Estás seguro de que deseas eliminar a ${nino.nombre} ${nino.apellido}?`);
-            if (confirmar) {
-                // 1. Pantalla
+            if (confirm(`¿Borrar a ${nino.nombre}?`)) {
                 childrenDB = childrenDB.filter(c => c.id !== id);
                 guardarDatosLocal();
                 volverLista();
-
-                // 2. Nube
-                showSync("Borrando de la base de datos...");
-                try {
-                    await fetch(API_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({action: 'delete_nino', id: id})
-                    });
-                } catch(err) {
-                    console.error("Borrado localmente.");
-                }
+                showSync("Borrando en la nube...");
+                try { await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({action: 'delete_nino', id: id}) }); } catch(err) {}
                 hideSync();
-            } else {
-                render();
             }
         }
+
+        // Pintar la interfaz inmediatamente al cargar
+        render();
     </script>
     <script>
         // Registrar Service Worker para PWA
