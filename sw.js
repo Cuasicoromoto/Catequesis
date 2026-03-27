@@ -1,4 +1,4 @@
-const CACHE_NAME = 'catequesis-cache-v0.17';
+const CACHE_NAME = 'catequesis-cache-v0.15';
 const urlsToCache =[
   './',
   './index.html',
@@ -6,49 +6,39 @@ const urlsToCache =[
   './icon.png'
 ];
 
-// Instalar el Service Worker y guardar los archivos en caché
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Archivos cacheados');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// Activar y limpiar cachés viejas (útil cuando actualices la app)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cache => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
+          if (cache !== CACHE_NAME) return caches.delete(cache);
         })
       );
     })
   );
 });
 
-// Estrategia: "Network First" (Red primero, respaldo en caché)
 self.addEventListener('fetch', event => {
+  // Ignorar peticiones de guardado a Google Sheets (POST)
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Si hay internet, clonamos la respuesta y actualizamos la caché
-        if (response && response.status === 200) {
+        if (response && response.status === 200 && !response.url.includes('script.google.com')) {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
         return response;
       })
-      .catch(() => {
-        // Si no hay internet (falla el fetch), buscamos en la caché
-        return caches.match(event.request);
-      })
+      .catch(() => caches.match(event.request))
   );
 });
