@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-
+ 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -596,7 +596,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
+            <p style="font-size: 12px; opacity: 0.8;">Cuasiparroquia NS de Coromoto<br>- Capilla San José -</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center;">
             <button class="add-btn" onclick="sincronizarConNube()" title="Actualizar Datos" style="background: transparent; box-shadow: none; font-size: 20px;">🔄</button>
@@ -929,10 +929,15 @@
                 nino.asistencia[fechaSeleccionada] = !nino.asistencia[fechaSeleccionada];
                 guardarDatosLocal();
                 render();
-                showSync("Guardando asistencia...");
-                try {
-                    await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ action: 'toggle_asistencia', id: id, fecha: fechaSeleccionada, presente: nino.asistencia[fechaSeleccionada] }) });
-                } catch(err) {}
+                showSync("Guardando...");
+                
+                // Aseguramos que fechaSeleccionada sea un string limpio
+                await enviarGoogle({ 
+                    action: 'toggle_asistencia', 
+                    id: id, 
+                    fecha: String(fechaSeleccionada), // Forzamos string
+                    presente: nino.asistencia[fechaSeleccionada] 
+                });
                 hideSync();
             }
         }
