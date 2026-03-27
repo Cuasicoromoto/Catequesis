@@ -610,7 +610,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>+ Capilla San José +</p>
+            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <!-- Botón Sincronizar con el nuevo estilo -->
@@ -713,27 +713,28 @@
         }
 
         function formatearFechaHumana(fechaInput) {
-            if (!fechaInput) return "---";
+            if (!fechaInput) return "--/--/----";
             let fecha = new Date(fechaInput);
             if (isNaN(fecha.getTime())) return fechaInput;
 
-            const meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-            
-            let dia = fecha.getUTCDate();
-            let mes = meses[fecha.getUTCMonth()];
+            // Extraemos componentes en UTC para evitar errores de zona horaria
+            let dia = String(fecha.getUTCDate()).padStart(2, '0');
+            let mes = String(fecha.getUTCMonth() + 1).padStart(2, '0'); // +1 porque Enero es 0
             let anio = fecha.getUTCFullYear();
 
-            return `${dia} / ${mes} / ${anio}`;
+            return `${dia}/${mes}/${anio}`;
         }
 
         function obtenerFechaParaInput(fechaInput) {
             if (!fechaInput) return "";
             let d = new Date(fechaInput);
             if (isNaN(d.getTime())) return "";
+            
             let y = d.getUTCFullYear();
             let m = String(d.getUTCMonth() + 1).padStart(2, '0');
             let day = String(d.getUTCDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
+            
+            return `${y}-${m}-${day}`; // Formato requerido por <input type="date">
         }
 
         // --- CALENDARIO: LÓGICA DE DOMINGOS ---
