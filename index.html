@@ -696,17 +696,38 @@
         window.addEventListener('load', sincronizarConNube);
 
         // --- CÁLCULO DE EDAD EXACTA ---
-        function calcularEdadExacta(fechaNacStr) {
-            if (!fechaNacStr) return 0;
-            let partes = fechaNacStr.split('-');
-            let fechaNacimiento = new Date(partes[0], partes[1] - 1, partes[2]);
+        function calcularEdadExacta(fechaInput) {
+            if (!fechaInput) return 0;
+            // Convertimos cualquier cosa que venga (ISO o String) en un objeto Fecha real
+            let fechaNacimiento = new Date(fechaInput);
+            if (isNaN(fechaNacimiento.getTime())) return 0; // Si la fecha es inválida
+
             let hoy = new Date();
             let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-            let diferenciaMes = hoy.getMonth() - fechaNacimiento.getMonth();
-            if (diferenciaMes < 0 || (diferenciaMes === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+            let m = hoy.getMonth() - fechaNacimiento.getMonth();
+
+            if (m < 0 || (m === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
                 edad--;
             }
             return edad;
+        }
+
+        function formatearFechaHumana(fechaInput) {
+            if (!fechaInput) return "Fecha no registrada";
+            let fecha = new Date(fechaInput);
+            if (isNaN(fecha.getTime())) return fechaInput;
+
+            // Configuramos para que escriba en español
+            const opciones = { day: 'numeric', month: 'long', year: 'numeric' };
+            return fecha.toLocaleDateString('es-ES', opciones);
+        }
+
+        // Función auxiliar para que los inputs de "Editar" no se rompan
+        function obtenerFechaParaInput(fechaInput) {
+            if (!fechaInput) return "";
+            let d = new Date(fechaInput);
+            if (isNaN(d.getTime())) return "";
+            return d.toISOString().split('T')[0]; // Devuelve YYYY-MM-DD
         }
 
         // --- CALENDARIO: LÓGICA DE DOMINGOS ---
@@ -962,7 +983,7 @@
                         <h2 style="margin: 0; padding: 0; border: none;">${nino.nombre} ${nino.apellido}</h2>
                     </div>
                     <div class="profile-data"><strong>Edad:</strong> ${calcularEdadExacta(nino.fechaNac)} años</div>
-                    <div class="profile-data"><strong>Nacimiento:</strong> ${nino.fechaNac}</div>
+                    <div class="profile-data"><strong>Nacimiento:</strong> ${formatearFechaHumana(nino.fechaNac)}</div>
                     <div class="profile-data"><strong>Sector:</strong> ${nino.sector}</div>
                     <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
                     <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
@@ -988,7 +1009,10 @@
                 <form onsubmit="guardarEdicion(event, ${nino.id})">
                     <div class="form-group"><label>Nombres</label><input type="text" id="edit-nombre" value="${nino.nombre}" required></div>
                     <div class="form-group"><label>Apellidos</label><input type="text" id="edit-apellido" value="${nino.apellido}" required></div>
-                    <div class="form-group"><label>Fecha de Nac.</label><input type="date" id="edit-fecha" value="${nino.fechaNac}" required></div>
+                    <div class="form-group">
+                        <label>Fecha de Nac.</label>
+                        <input type="date" id="edit-fecha" value="${obtenerFechaParaInput(nino.fechaNac)}" required>
+                    </div>
                     <div class="form-group"><label>Representante</label><input type="text" id="edit-repre" value="${nino.representante}" required></div>
                     <div class="form-group"><label>Teléfono</label><input type="tel" id="edit-tlf" value="${nino.telefono}" required></div>
                     <div class="form-group"><label>Sector</label><input type="text" id="edit-sector" value="${nino.sector}" required></div>
