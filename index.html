@@ -610,7 +610,7 @@
     <header>
         <div class="header-title">
             <h1>Catequesis App</h1>
-            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>Capilla San José</p>
+            <p style="font-size: 11px; opacity: 0.8; line-height: 1.2;">Cuasiparroquia NS de Coromoto<br>+ Capilla San José +</p>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <!-- Botón Sincronizar con el nuevo estilo -->
@@ -676,14 +676,21 @@
                 let datosNube = await response.json();
                 
                 if (datosNube && Array.isArray(datosNube)) {
-                    childrenDB = datosNube;
+                    // Limpiamos los datos para evitar errores de tipo
+                    childrenDB = datosNube.map(n => ({
+                        ...n,
+                        telefono: String(n.telefono || ""),
+                        nombre: String(n.nombre || ""),
+                        apellido: String(n.apellido || "")
+                    }));
                     guardarDatosLocal();
+                    render(); // <--- IMPORTANTE: Volver a dibujar la pantalla
                 }
             } catch (error) {
-                console.log("Modo Offline o error de conexión. Usando datos locales.");
+                console.warn("Sin conexión. Usando datos locales.");
+                render();
             }
             hideSync();
-            render(); // CRUCIAL: Refrescar pantalla pase lo que pase
         }
 
         window.addEventListener('load', sincronizarConNube);
@@ -934,12 +941,15 @@
         }
 
         function renderVerNino(id) {
-            // Usamos == (doble igual) para que encuentre el ID aunque uno sea texto y otro número
-            const nino = childrenDB.find(c => c.id == id); 
-            
+            const nino = childrenDB.find(c => c.id == id);
             if (!nino) {
-                return `<div class="card"><p style="text-align:center; color:red;">⚠️ Error: No se encontró la información del niño (ID: ${id}). Intenta sincronizar de nuevo.</p></div>`;
+                return `<div class="card"><p style="text-align:center; color:red;">⚠️ Error: No se encontró al niño (ID: ${id}). Pulsa el botón 🔄 para actualizar.</p></div>`;
             }
+
+            // --- PROTECCIÓN PARA EL TELÉFONO (Evita el error .replace) ---
+            const tlfOriginal = nino.telefono || "";
+            const tlfLimpio = String(tlfOriginal).replace(/\s+/g, '').replace(/-/g, '');
+            // -----------------------------------------------------------
 
             const iElm = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 32 35 L 68 35 M 45 35 L 45 28 L 55 28 L 55 35 M 38 35 L 40 68 L 60 68 L 62 35 M 50 45 L 50 58" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
             const iEdi = `<svg width="20" height="20" viewBox="0 0 100 100" style="display:block;flex-shrink:0;"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="5" fill="none"/><path d="M 30 70 L 50 60 L 70 40 L 60 30 L 40 50 Z M 40 50 L 50 60 M 55 35 L 65 45" stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -957,7 +967,7 @@
                     <div class="profile-data"><strong>Grupo:</strong> ${nino.grupo}</div>
                     <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
                     <div class="profile-data"><strong>Representante:</strong> ${nino.representante}</div>
-                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${nino.telefono.replace(/\s+/g, '')}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${nino.telefono}</a></div>
+                    <div class="profile-data"><strong>Teléfono:</strong> <a href="tel:${tlfLimpio}" style="color:var(--primary); font-weight:bold; text-decoration: none;">${tlfOriginal}</a></div>
                     <hr style="margin: 15px 0; border: 0; border-top: 1px solid var(--border);">
                     <div class="profile-data"><strong>Bautizado:</strong> ${nino.bautizado ? 'Sí' : 'No'}</div>
                     <div class="profile-data"><strong>Comunión:</strong> ${nino.comunion ? 'Sí' : 'No'}</div>
